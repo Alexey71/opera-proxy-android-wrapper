@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">Proxy Opera Turbo</string>
+    
+    <!-- Основной экран -->
+    <string name="region_title">Регион</string>
+    <string name="settings_title">Настройки</string>
+    <string name="advanced_settings_title">Расширенные настройки</string>
+    <string name="btn_start">Запустить прокси</string>
+    <string name="btn_stop">Остановить прокси</string>
+    <string name="logs_title">Лог:</string>
+    <string name="app_selector_btn">Выбрать приложения</string>
+    <string name="app_selector_desc">* Невыбранные приложения работают без VPN.</string>
+    <string name="dns_hint">DNS Сервер (VPN интерфейс)</string>
+    <string name="notification_channel">Сервис Opera Turbo</string>
+    <string name="notification_title">Opera Turbo Активен</string>
+    <string name="notification_action_stop">ОСТАНОВИТЬ</string>
+    <string name="btn_settings_advanced">Расширенные настройки</string>
+    <string name="btn_reset_defaults">Сбросить по умолчанию</string>
+    <string name="btn_save">Сохранить</string>
+
+    <!-- Расширенные настройки (Labels & Hints) -->
+    <string name="pref_bind_address">Bind Address</string>
+    <string name="pref_bind_address_hint">127.0.0.1:1080</string>
+    <string name="help_bind_address">Адрес и порт локального интерфейса для прослушивания входящих соединений.</string>
+
+    <string name="pref_bootstrap_dns">Bootstrap DNS</string>
+    <string name="pref_bootstrap_dns_hint">https://1.1.1.1/dns-query,...</string>
+    <string name="help_bootstrap_dns">Список DoH/DoT резолверов через запятую для инициализации соединения.</string>
+
+    <string name="pref_fake_sni">Fake SNI</string>
+    <string name="pref_fake_sni_hint">example.com</string>
+    <string name="help_fake_sni">Доменное имя, подставляемое в поле SNI при TLS рукопожатии.</string>
+
+    <string name="pref_upstream_proxy">Upstream Proxy</string>
+    <string name="pref_upstream_proxy_hint">socks5://1.2.3.4:1080</string>
+    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик. Поддерживает http/socks5.</string>
+
+    <string name="pref_verbosity">Уровень логирования</string>
+    <string name="help_verbosity">Детализация логов. 10 - макс. детализация, 50 - только критические ошибки.</string>
+
+    <string name="pref_socks_mode">SOCKS Mode</string>
+    <string name="help_socks_mode">Если включено, локальный порт ожидает SOCKS5 соединения вместо HTTP прокси.</string>
+
+    <!-- Ошибки валидации -->
+    <string name="err_invalid_format">Неверный формат</string>
+    <string name="err_required">Обязательное поле</string>
+
+    <!-- Массивы значений -->
+    <string-array name="verbosity_levels">
+        <item>10 (Debug)</item>
+        <item>20 (Info)</item>
+        <item>30 (Warning)</item>
+        <item>40 (Error)</item>
+        <item>50 (Critical)</item>
+    </string-array>
+    
+    <string-array name="verbosity_values">
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+        <item>40</item>
+        <item>50</item>
+    </string-array>
+</resources>

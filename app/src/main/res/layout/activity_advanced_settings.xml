@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_app">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:background="@color/background_card">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/advanced_settings_title"
+            app:titleTextColor="@color/white"
+            app:navigationIcon="?attr/homeAsUpIndicator"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Группа: Сеть -->
+            <TextView
+                android:text="Локальная сеть"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilBindAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_bind_address"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_help"
+                app:endIconTint="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBindAddress"
+                    android:inputType="text"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/swSocksMode"
+                android:text="@string/pref_socks_mode"
+                android:textColor="@color/text_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:paddingEnd="12dp"/>
+
+            <!-- Группа: Трафик -->
+            <TextView
+                android:text="Трафик и маскировка"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilFakeSni"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_fake_sni"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_help"
+                app:endIconTint="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etFakeSni"
+                    android:inputType="textUri"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilUpstreamProxy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_upstream_proxy"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_help"
+                app:endIconTint="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUpstreamProxy"
+                    android:inputType="textUri"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Группа: DNS -->
+            <TextView
+                android:text="DNS"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilBootstrapDns"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_bootstrap_dns"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_help"
+                app:endIconTint="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBootstrapDns"
+                    android:inputType="textMultiLine"
+                    android:textColor="@color/text_primary"
+                    android:minLines="3"
+                    android:gravity="top"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Группа: Логи -->
+            <TextView
+                android:text="Отладка"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"/>
+            
+            <LinearLayout
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/item_background"
+                android:padding="8dp"
+                android:layout_marginBottom="24dp">
+                <TextView
+                    android:text="@string/pref_verbosity"
+                    android:textColor="@color/text_primary"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"/>
+                <Spinner
+                    android:id="@+id/spVerbosity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="150dp"/>
+            </LinearLayout>
+
+            <!-- Кнопки -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:text="@string/btn_save"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                app:backgroundTint="@color/opera_red"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReset"
+                android:text="@string/btn_reset_defaults"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="@color/text_secondary"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -3,6 +3,10 @@ package com.example.operaproxy
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
@@ -14,28 +18,42 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
-// FIX: Имя класса исправлено на AdvancedSettingsActivity
 class AdvancedSettingsActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
-	private lateinit var swProxyOnly: SwitchMaterial
+    private lateinit var swProxyOnly: SwitchMaterial
     private lateinit var etBindAddress: TextInputEditText
     private lateinit var etFakeSni: TextInputEditText
     private lateinit var etUpstreamProxy: TextInputEditText
     private lateinit var etBootstrapDns: TextInputEditText
     private lateinit var swSocksMode: SwitchMaterial
     private lateinit var spVerbosity: Spinner
+    
+    // Новые поля
+    private lateinit var etTestUrl: TextInputEditText
+    private lateinit var swManualMode: SwitchMaterial
+    private lateinit var etCmdPreview: TextInputEditText
 
     // Значения по умолчанию
     private val DEFAULT_BIND = "127.0.0.1:1080"
     private val DEFAULT_BOOTSTRAP = "https://1.1.1.3/dns-query,https://8.8.8.8/dns-query,https://dns.google/dns-query,https://security.cloudflare-dns.com/dns-query"
+    private val DEFAULT_TEST_URL = "https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"
     private val DEFAULT_VERBOSITY_INDEX = 1 // 20 Info
+
+    // Временные переменные для генерации превью
+    private var mainCountry = "EU"
+    private var mainDns = "8.8.8.8"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_advanced_settings)
         
         prefs = getSharedPreferences("OperaProxyPrefs", Context.MODE_PRIVATE)
+        
+        // Читаем настройки из MainActivity для корректного предпросмотра
+        val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
+        mainCountry = when(countryId) { R.id.rbAS -> "AS"; R.id.rbAM -> "AM"; else -> "EU" }
+        mainDns = prefs.getString("DNS", "8.8.8.8") ?: "8.8.8.8"
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -45,6 +63,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         initViews()
         setupTooltips()
         loadValues()
+        setupLivePreview() // Слушатели изменений для обновления CMD
 
         findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
             if (validateInputs()) {
@@ -65,13 +84,18 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-		swProxyOnly = findViewById(R.id.swProxyOnly)
+        swProxyOnly = findViewById(R.id.swProxyOnly)
         etBindAddress = findViewById(R.id.etBindAddress)
         etFakeSni = findViewById(R.id.etFakeSni)
         etUpstreamProxy = findViewById(R.id.etUpstreamProxy)
         etBootstrapDns = findViewById(R.id.etBootstrapDns)
         swSocksMode = findViewById(R.id.swSocksMode)
         spVerbosity = findViewById(R.id.spVerbosity)
+        
+        // Инициализация новых View
+        etTestUrl = findViewById(R.id.etTestUrl)
+        swManualMode = findViewById(R.id.swManualMode)
+        etCmdPreview = findViewById(R.id.etCmdPreview)
 
         val verbosityAdapter = ArrayAdapter.createFromResource(
             this,
@@ -80,6 +104,66 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         )
         verbosityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spVerbosity.adapter = verbosityAdapter
+    }
+    
+    // Добавляем TextWatcher ко всем полям, влияющим на команду
+    private fun setupLivePreview() {
+        val watcher = object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) { updateCmdPreview() }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        }
+        
+        val fields = listOf(etBindAddress, etFakeSni, etUpstreamProxy, etBootstrapDns, etTestUrl)
+        fields.forEach { it.addTextChangedListener(watcher) }
+        
+        swSocksMode.setOnCheckedChangeListener { _, _ -> updateCmdPreview() }
+        spVerbosity.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { updateCmdPreview() }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        
+        swManualMode.setOnCheckedChangeListener { _, isChecked ->
+            etCmdPreview.isEnabled = isChecked
+            if (!isChecked) {
+                // Если выключили ручной режим - перегенерируем команду из UI
+                updateCmdPreview()
+            }
+        }
+    }
+
+    private fun updateCmdPreview() {
+        // Если включен ручной режим, не трогаем текст
+        if (swManualMode.isChecked) return
+        
+        val sb = StringBuilder()
+        
+        // Обязательные (из UI)
+        sb.append("-bind-address ").append(etBindAddress.text.toString().ifEmpty { DEFAULT_BIND })
+        sb.append(" -country ").append(mainCountry)
+        
+        // Verbosity
+        val verbosityValues = resources.getStringArray(R.array.verbosity_values)
+        val pos = spVerbosity.selectedItemPosition
+        val safePos = if (pos in verbosityValues.indices) pos else DEFAULT_VERBOSITY_INDEX
+        sb.append(" -verbosity ").append(verbosityValues[safePos])
+        
+        // Опциональные
+        val bootstrap = etBootstrapDns.text.toString()
+        if (bootstrap.isNotEmpty()) sb.append(" -bootstrap-dns ").append(bootstrap)
+        
+        val sni = etFakeSni.text.toString()
+        if (sni.isNotEmpty()) sb.append(" -fake-SNI ").append(sni)
+        
+        val proxy = etUpstreamProxy.text.toString()
+        if (proxy.isNotEmpty()) sb.append(" -proxy ").append(proxy)
+        
+        if (swSocksMode.isChecked) sb.append(" -socks-mode")
+        
+        val testUrl = etTestUrl.text.toString()
+        if (testUrl.isNotEmpty()) sb.append(" -server-selection-test-url ").append(testUrl)
+        
+        etCmdPreview.setText(sb.toString())
     }
 
     private fun setupTooltips() {
@@ -94,15 +178,19 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         safeSetup(R.id.tilFakeSni, R.string.pref_fake_sni, R.string.help_fake_sni)
         safeSetup(R.id.tilUpstreamProxy, R.string.pref_upstream_proxy, R.string.help_upstream_proxy)
         safeSetup(R.id.tilBootstrapDns, R.string.pref_bootstrap_dns, R.string.help_bootstrap_dns)
-		
-		swProxyOnly.setOnLongClickListener {
+        safeSetup(R.id.tilTestUrl, R.string.pref_test_url, R.string.help_test_url)
+        
+        swProxyOnly.setOnLongClickListener {
             showInfoDialog(getString(R.string.pref_proxy_only), getString(R.string.help_proxy_only))
             true
         }
-        
         swSocksMode.setOnLongClickListener { 
             showInfoDialog(getString(R.string.pref_socks_mode), getString(R.string.help_socks_mode))
             true 
+        }
+        swManualMode.setOnLongClickListener {
+            showInfoDialog(getString(R.string.pref_manual_mode), getString(R.string.help_manual_mode))
+            true
         }
     }
 
@@ -115,12 +203,13 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun loadValues() {
-		swProxyOnly.isChecked = prefs.getBoolean("PROXY_ONLY", false)
+        swProxyOnly.isChecked = prefs.getBoolean("PROXY_ONLY", false)
         etBindAddress.setText(prefs.getString("BIND_ADDRESS", DEFAULT_BIND))
         etFakeSni.setText(prefs.getString("FAKE_SNI", ""))
         etUpstreamProxy.setText(prefs.getString("UPSTREAM_PROXY", ""))
         etBootstrapDns.setText(prefs.getString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP))
         swSocksMode.isChecked = prefs.getBoolean("SOCKS_MODE", false)
+        etTestUrl.setText(prefs.getString("TEST_URL", DEFAULT_TEST_URL))
         
         try {
             val verbosityVal = prefs.getInt("VERBOSITY", 20)
@@ -133,6 +222,17 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             spVerbosity.setSelection(DEFAULT_VERBOSITY_INDEX)
         }
+        
+        // Загрузка состояния командной строки
+        val isManual = prefs.getBoolean("MANUAL_CMD_MODE", false)
+        swManualMode.isChecked = isManual
+        if (isManual) {
+            etCmdPreview.setText(prefs.getString("CUSTOM_CMD_STRING", ""))
+            etCmdPreview.isEnabled = true
+        } else {
+            etCmdPreview.isEnabled = false
+            etCmdPreview.post { updateCmdPreview() }
+        }
     }
 
     private fun validateInputs(): Boolean {
@@ -144,6 +244,14 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             isValid = false
         } else {
             findViewById<TextInputLayout>(R.id.tilBindAddress).error = null
+        }
+        
+        val testUrl = etTestUrl.text.toString()
+        if (testUrl.isNotEmpty() && !testUrl.startsWith("http")) {
+            findViewById<TextInputLayout>(R.id.tilTestUrl).error = "URL должен начинаться с http/https"
+            isValid = false
+        } else {
+            findViewById<TextInputLayout>(R.id.tilTestUrl).error = null
         }
 
         val proxyText = etUpstreamProxy.text.toString()
@@ -164,23 +272,28 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         val selectedVerbosity = verbosityValues[safePos].toInt()
 
         prefs.edit()
-			.putBoolean("PROXY_ONLY", swProxyOnly.isChecked)
+            .putBoolean("PROXY_ONLY", swProxyOnly.isChecked)
             .putString("BIND_ADDRESS", etBindAddress.text.toString())
             .putString("FAKE_SNI", etFakeSni.text.toString())
             .putString("UPSTREAM_PROXY", etUpstreamProxy.text.toString())
             .putString("BOOTSTRAP_DNS", etBootstrapDns.text.toString())
             .putBoolean("SOCKS_MODE", swSocksMode.isChecked)
             .putInt("VERBOSITY", selectedVerbosity)
+            .putString("TEST_URL", etTestUrl.text.toString())
+            .putBoolean("MANUAL_CMD_MODE", swManualMode.isChecked)
+            .putString("CUSTOM_CMD_STRING", etCmdPreview.text.toString())
             .apply()
     }
 
     private fun resetDefaults() {
-		swProxyOnly.isChecked = false
+        swProxyOnly.isChecked = false
         etBindAddress.setText(DEFAULT_BIND)
         etFakeSni.setText("")
         etUpstreamProxy.setText("")
         etBootstrapDns.setText(DEFAULT_BOOTSTRAP)
         swSocksMode.isChecked = false
+        etTestUrl.setText(DEFAULT_TEST_URL)
         spVerbosity.setSelection(DEFAULT_VERBOSITY_INDEX)
+        swManualMode.isChecked = false
     }
 }

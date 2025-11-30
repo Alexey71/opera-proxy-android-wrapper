@@ -87,7 +87,7 @@
                     android:paddingBottom="0dp"/>
             </LinearLayout>
             
-            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="500dp" app:cardCornerRadius="12dp" app:cardBackgroundColor="@color/log_background" app:strokeColor="@color/divider" app:strokeWidth="1dp" app:contentPadding="0dp">
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="400dp" app:cardCornerRadius="12dp" app:cardBackgroundColor="@color/log_background" app:strokeColor="@color/divider" app:strokeWidth="1dp" app:contentPadding="0dp">
                 <ScrollView
                     android:id="@+id/svLog"
                     android:layout_width="match_parent"

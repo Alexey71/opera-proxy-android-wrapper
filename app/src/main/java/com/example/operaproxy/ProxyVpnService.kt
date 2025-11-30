@@ -30,12 +30,17 @@ class ProxyVpnService : VpnService() {
     private var bootstrapDns = ""
     private var fakeSni = ""
     private var upstreamProxy = ""
+	private var testUrl = ""
     
     // По умолчанию 20, но будет перезаписано из Intent
     private var verbosity = 20
     
     private var socksMode = false
     private var proxyOnlyMode = false
+	
+    // Ручной режим
+    private var manualCmdMode = false
+    private var customCmdString = ""
 
     companion object { var isRunning = false }
 
@@ -67,21 +72,35 @@ class ProxyVpnService : VpnService() {
             upstreamProxy = intent.getStringExtra("UPSTREAM_PROXY") ?: ""
             socksMode = intent.getBooleanExtra("SOCKS_MODE", false)
             proxyOnlyMode = intent.getBooleanExtra("PROXY_ONLY", false)
+            testUrl = intent.getStringExtra("TEST_URL") ?: ""
+            manualCmdMode = intent.getBooleanExtra("MANUAL_CMD_MODE", false)
+            customCmdString = intent.getStringExtra("CUSTOM_CMD_STRING") ?: ""
+			
+			if (manualCmdMode) {
+                logToUI("[CONFIG] ! ВКЛЮЧЕН РУЧНОЙ РЕЖИМ КОМАНДЫ !")
+				logToUI("[CONFIG] CUSTOM CMD: $customCmdString")
+            }
 
             logToUI("[CONFIG] Страна: $currentCountry")
             logToUI("[CONFIG] VPN DNS: $tunDnsServer")
             logToUI("[CONFIG] Apps count: ${allowedApps?.size ?: 0}")
-            
-            logToUI("=== РАСШИРЕННЫЕ НАСТРОЙКИ ===")
-            logToUI("[ADV] Bind: $bindAddress")
-            logToUI("[ADV] Mode: ${if(socksMode) "SOCKS" else "HTTP"}")
-            logToUI("[ADV] Verbosity: $verbosity")
+			
+			if (verbosity <= 10) {
+				logToUI("=== РАСШИРЕННЫЕ НАСТРОЙКИ ===")
+				logToUI("[ADV] BIND: $bindAddress")
+				logToUI("[ADV] BOOTSTRAP DNS: $bootstrapDns")
+				logToUI("[ADV] FAKE SNI: $fakeSni")
+				logToUI("[ADV] MODE: ${if(socksMode) "SOCKS" else "HTTP"}")
+				logToUI("[ADV] TEST URL: $testUrl")
+				logToUI("[ADV] Verbosity: $verbosity")
+			}
         }
 
         startForegroundNotification()
 
         if (!isRunning) {
             isRunning = true
+			notifyStatusChange()
             
             Thread { 
                 runBinary() 
@@ -95,6 +114,7 @@ class ProxyVpnService : VpnService() {
             }
         } else {
             logToUI("[WARNING] Сервис уже запущен.")
+			notifyStatusChange()
         }
         return START_STICKY
     }
@@ -121,7 +141,7 @@ class ProxyVpnService : VpnService() {
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle(getString(R.string.notification_title) + " ($currentCountry)")
-            .setContentText("$modeText | $bindAddress")
+            .setContentText("$modeText | $bindAddress | $tunDnsServer")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingMain)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.notification_action_stop), pendingStop)
@@ -185,8 +205,13 @@ class ProxyVpnService : VpnService() {
             val nativeLibDir = applicationInfo.nativeLibraryDir
             val binaryName = "liboperaproxy.so"
             val binaryPath = File(nativeLibDir, binaryName)
+			
+			if (!binaryPath.exists()) {
+                logToUI("[ERROR] Бинарный файл не найден: ${binaryPath.absolutePath}")
+            }
             
             logToUI("[BIN] Поиск бинарника: ${binaryPath.absolutePath}")
+			
             
             val sslFile = File(filesDir, "cacert.pem")
             if (!sslFile.exists()) { 
@@ -203,33 +228,48 @@ class ProxyVpnService : VpnService() {
             val args = ArrayList<String>()
             args.add(binaryPath.absolutePath)
             
-            args.add("-bind-address"); args.add(bindAddress)
-            args.add("-country"); args.add(currentCountry)
-            
-            // Передаем verbosity бинарнику, чтобы он сам решал, сколько спамить
-            args.add("-verbosity"); args.add(verbosity.toString())
-            
-            args.add("-cafile"); args.add(sslFile.absolutePath)
-            
-            if (bootstrapDns.isNotEmpty()) {
-                args.add("-bootstrap-dns"); args.add(bootstrapDns)
+            if (manualCmdMode && customCmdString.isNotBlank()) {
+                // Парсим строку пользователя по пробелам
+                val tokens = customCmdString.trim().split("\\s+".toRegex())
+                args.addAll(tokens)
+                
+                // Добавляем cafile, так как путь к нему динамический
+                if (!customCmdString.contains("-cafile")) {
+                    args.add("-cafile")
+                    args.add(sslFile.absolutePath)
+                }
+                
+            } else {
+                // АВТОМАТИЧЕСКИЙ РЕЖИМ (Стандартный)
+                args.add("-bind-address"); args.add(bindAddress)
+                args.add("-country"); args.add(currentCountry)
+                args.add("-verbosity"); args.add(verbosity.toString())
+                args.add("-cafile"); args.add(sslFile.absolutePath)
+                
+                if (bootstrapDns.isNotEmpty()) {
+                    args.add("-bootstrap-dns"); args.add(bootstrapDns)
+                }
+                if (fakeSni.isNotEmpty()) {
+                    args.add("-fake-SNI"); args.add(fakeSni)
+                }
+                if (upstreamProxy.isNotEmpty()) {
+                    args.add("-proxy"); args.add(upstreamProxy)
+                }
+                if (socksMode) {
+                    args.add("-socks-mode")
+                }
+                
+                args.add("-server-selection-test-url")
+                if (testUrl.isNotEmpty()) {
+                    args.add(testUrl)
+                } else {
+                    args.add("https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js")
+                }
             }
-            if (fakeSni.isNotEmpty()) {
-                args.add("-fake-SNI"); args.add(fakeSni)
-            }
-            if (upstreamProxy.isNotEmpty()) {
-                args.add("-proxy"); args.add(upstreamProxy)
-            }
-            if (socksMode) {
-                args.add("-socks-mode")
-            }
-            
-            args.add("-server-selection-test-url")
-            args.add("https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js")
-
+			
             logToUI("[CMD] Запуск бинарного файла...")
             // Если включен DEBUG, покажем полную команду
-            logToUI("CMD: ${args.joinToString(" ")}")
+            logToUI("CMD: ${args.joinToString(" ")}", fromBinary = false)
 
             val pb = ProcessBuilder(args)
             pb.redirectErrorStream(true)
@@ -263,10 +303,23 @@ class ProxyVpnService : VpnService() {
 
     private fun logToUI(message: String?, fromBinary: Boolean = false) { 
         if (message == null) return
+		
+		val showSystemLog = !fromBinary && verbosity <= 20
         
-        if (fromBinary || verbosity == 10) {
-            sendBroadcast(Intent("UPDATE_LOG").putExtra("log", message)) 
-        }
+        if (fromBinary || showSystemLog) {
+			val intent = Intent("UPDATE_LOG")
+			intent.putExtra("log", message)
+			// FIX ANDROID 14: Явно указываем пакет назначения.
+			intent.setPackage(packageName)
+			sendBroadcast(intent)
+		}
+    }
+	
+	// Метод для отправки статуса в Activity
+    private fun notifyStatusChange() {
+        val intent = Intent("STATUS_UPDATE")
+        intent.setPackage(packageName)
+        sendBroadcast(intent)
     }
     
     private fun stopVpn() { 
@@ -279,7 +332,8 @@ class ProxyVpnService : VpnService() {
                 process?.destroy()
                 process = null
             }
-            isRunning = false 
+            isRunning = false
+			notifyStatusChange()
             logToUI("[STOP] Служба остановлена.")
         } catch (e: Exception) {
             logToUI("[STOP ERROR] ${e.message}")

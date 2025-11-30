@@ -55,12 +55,27 @@ class MainActivity : AppCompatActivity() {
             intent?.getStringExtra("log")?.let { rawMessage ->
                 val timestamp = timeFormatter.format(Date())
                 val formattedLog = "[$timestamp] $rawMessage\n"
+				
+				val view = svLog.getChildAt(0)
+				val diff = if (view != null) (view.bottom - (svLog.height + svLog.scrollY)) else 0
+				val wasAtBottom = diff <= 100
+				
                 tvLog.append(formattedLog)
-                svLog.post { svLog.fullScroll(ScrollView.FOCUS_DOWN) }
+				
+				if (wasAtBottom) {
+					svLog.post { svLog.fullScroll(ScrollView.FOCUS_DOWN) }
+				}
             } 
         } 
     }
     
+	
+	private val statusReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (ProxyVpnService.isRunning) updateUiStarted() else updateUiStopped()
+        }
+    }
+	
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -69,15 +84,20 @@ class MainActivity : AppCompatActivity() {
 
         initViews()
         setupListeners()
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { 
-            registerReceiver(logReceiver, IntentFilter("UPDATE_LOG"), Context.RECEIVER_NOT_EXPORTED) 
-        } else { 
-            registerReceiver(logReceiver, IntentFilter("UPDATE_LOG")) 
-        }
-        
-        loadSettings()
-    }
+		
+			val logFilter = IntentFilter("UPDATE_LOG")
+			val statusFilter = IntentFilter("STATUS_UPDATE")
+			
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+				registerReceiver(logReceiver, logFilter, Context.RECEIVER_NOT_EXPORTED)
+				registerReceiver(statusReceiver, statusFilter, Context.RECEIVER_NOT_EXPORTED)
+			} else {
+				registerReceiver(logReceiver, logFilter)
+				registerReceiver(statusReceiver, statusFilter)
+			}
+		loadSettings()
+		
+	}
 
     private fun initViews() {
         tvLog = findViewById(R.id.tvLog)
@@ -190,6 +210,9 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("SOCKS_MODE", prefs.getBoolean("SOCKS_MODE", false))
         intent.putExtra("PROXY_ONLY", prefs.getBoolean("PROXY_ONLY", false))
         intent.putExtra("VERBOSITY", verbosity)
+		intent.putExtra("TEST_URL", prefs.getString("TEST_URL", ""))
+        intent.putExtra("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
+        intent.putExtra("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
         updateUiStarted()

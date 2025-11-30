@@ -9,7 +9,7 @@
     <string name="btn_stop">Остановить прокси</string>
     <string name="logs_title">Лог:</string>
     <string name="app_selector_btn">Выбрать приложения</string>
-    <string name="app_selector_desc">* Невыбранные приложения работают без VPN.</string>
+    <string name="app_selector_desc">* Невыбранные приложения работают без VPN. </string>
     <string name="dns_hint">DNS Сервер (VPN интерфейс)</string>
     <string name="notification_channel">Сервис Opera Turbo</string>
     <string name="notification_title">Opera Turbo Активен</string>
@@ -43,6 +43,14 @@
 
 	<string name="pref_proxy_only">Режим «Только Прокси»</string>
     <string name="help_proxy_only">Запускает только локальный сервер без создания VPN-туннеля. Требует ручной настройки прокси в других приложениях или Wi-Fi.</string>
+	
+	<string name="pref_test_url">Test URL (Benchmark)</string>
+    <string name="pref_test_url_hint">https://ajax.googleapis.com...</string>
+    <string name="help_test_url">URL, используемый для тестирования скорости и выбора самого быстрого сервера.</string>
+	
+	<string name="pref_cmd_args">Аргументы запуска</string>
+    <string name="pref_manual_mode">Ручное редактирование команды</string>
+    <string name="help_manual_mode">Если включено, сервис использует строку ниже как аргументы запуска (игнорируя другие настройки выше). Пути к бинарнику и сертификату добавляются автоматически.</string>
 
     <!-- Ошибки валидации -->
     <string name="err_invalid_format">Неверный формат</string>

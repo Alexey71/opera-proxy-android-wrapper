@@ -163,7 +163,28 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
-
+			
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilTestUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_test_url"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_help"
+                app:endIconTint="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etTestUrl"
+                    android:inputType="textUri"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>			
+			
             <!-- Группа: Логи -->
             <TextView
                 android:text="Отладка"
@@ -194,6 +215,47 @@
                     android:layout_height="48dp"
                     android:minWidth="150dp"/>
             </LinearLayout>
+			
+			<!-- КОМАНДНАЯ СТРОКА -->
+            <TextView
+                android:text="@string/pref_cmd_args"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/swManualMode"
+                android:text="@string/pref_manual_mode"
+                android:textColor="@color/text_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:paddingEnd="12dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilCmdPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="CMD Preview / Override"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="24dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCmdPreview"
+                    android:inputType="textMultiLine"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="monospace"
+                    android:textSize="12sp"
+                    android:minLines="3"
+                    android:gravity="top"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Кнопки -->
             <com.google.android.material.button.MaterialButton

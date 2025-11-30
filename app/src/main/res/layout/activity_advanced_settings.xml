@@ -39,6 +39,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"/>
+				
+			<com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/swProxyOnly"
+                android:text="@string/pref_proxy_only"
+                android:textColor="@color/text_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:paddingEnd="12dp"/>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBindAddress"

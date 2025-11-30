@@ -41,6 +41,9 @@
     <string name="pref_socks_mode">SOCKS Mode</string>
     <string name="help_socks_mode">Если включено, локальный порт ожидает SOCKS5 соединения вместо HTTP прокси.</string>
 
+	<string name="pref_proxy_only">Режим «Только Прокси»</string>
+    <string name="help_proxy_only">Запускает только локальный сервер без создания VPN-туннеля. Требует ручной настройки прокси в других приложениях или Wi-Fi.</string>
+
     <!-- Ошибки валидации -->
     <string name="err_invalid_format">Неверный формат</string>
     <string name="err_required">Обязательное поле</string>

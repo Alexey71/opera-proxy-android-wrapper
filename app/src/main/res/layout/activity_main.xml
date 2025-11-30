@@ -49,7 +49,43 @@
             <com.google.android.material.button.MaterialButton android:id="@+id/btnToggle" android:text="@string/btn_start" android:textSize="18sp" android:textStyle="bold" android:padding="16dp" app:cornerRadius="30dp" app:backgroundTint="@color/opera_red" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="24dp" android:elevation="6dp"/>
             
             <!-- Лог -->
-            <TextView android:text="Лог событий" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:layout_marginStart="4dp"/>
+			<LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp">
+
+                <TextView
+                    android:text="Лог событий"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearLog"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:text="Очистить"
+                    android:textColor="@color/text_secondary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyLog"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:text="Копировать"
+                    android:textColor="@color/opera_red"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp"/>
+            </LinearLayout>
             
             <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="500dp" app:cardCornerRadius="12dp" app:cardBackgroundColor="@color/log_background" app:strokeColor="@color/divider" app:strokeWidth="1dp" app:contentPadding="0dp">
                 <ScrollView
@@ -57,13 +93,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:fillViewport="true">
+                    <!-- Добавили textIsSelectable для возможности выделения пальцем -->
                     <TextView 
                         android:id="@+id/tvLog" 
                         android:layout_width="match_parent" 
                         android:layout_height="wrap_content" 
                         android:padding="16dp"
                         android:fontFamily="monospace" 
-                        android:textSize="12sp" 
+                        android:textSize="11sp" 
                         android:textColor="@color/log_text" 
                         android:textIsSelectable="true"/>
                 </ScrollView>

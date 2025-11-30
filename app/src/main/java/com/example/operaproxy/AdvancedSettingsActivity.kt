@@ -18,6 +18,7 @@ import com.google.android.material.textfield.TextInputLayout
 class AdvancedSettingsActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
+	private lateinit var swProxyOnly: SwitchMaterial
     private lateinit var etBindAddress: TextInputEditText
     private lateinit var etFakeSni: TextInputEditText
     private lateinit var etUpstreamProxy: TextInputEditText
@@ -64,6 +65,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+		swProxyOnly = findViewById(R.id.swProxyOnly)
         etBindAddress = findViewById(R.id.etBindAddress)
         etFakeSni = findViewById(R.id.etFakeSni)
         etUpstreamProxy = findViewById(R.id.etUpstreamProxy)
@@ -92,6 +94,11 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         safeSetup(R.id.tilFakeSni, R.string.pref_fake_sni, R.string.help_fake_sni)
         safeSetup(R.id.tilUpstreamProxy, R.string.pref_upstream_proxy, R.string.help_upstream_proxy)
         safeSetup(R.id.tilBootstrapDns, R.string.pref_bootstrap_dns, R.string.help_bootstrap_dns)
+		
+		swProxyOnly.setOnLongClickListener {
+            showInfoDialog(getString(R.string.pref_proxy_only), getString(R.string.help_proxy_only))
+            true
+        }
         
         swSocksMode.setOnLongClickListener { 
             showInfoDialog(getString(R.string.pref_socks_mode), getString(R.string.help_socks_mode))
@@ -108,6 +115,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun loadValues() {
+		swProxyOnly.isChecked = prefs.getBoolean("PROXY_ONLY", false)
         etBindAddress.setText(prefs.getString("BIND_ADDRESS", DEFAULT_BIND))
         etFakeSni.setText(prefs.getString("FAKE_SNI", ""))
         etUpstreamProxy.setText(prefs.getString("UPSTREAM_PROXY", ""))
@@ -156,6 +164,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         val selectedVerbosity = verbosityValues[safePos].toInt()
 
         prefs.edit()
+			.putBoolean("PROXY_ONLY", swProxyOnly.isChecked)
             .putString("BIND_ADDRESS", etBindAddress.text.toString())
             .putString("FAKE_SNI", etFakeSni.text.toString())
             .putString("UPSTREAM_PROXY", etUpstreamProxy.text.toString())
@@ -166,6 +175,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun resetDefaults() {
+		swProxyOnly.isChecked = false
         etBindAddress.setText(DEFAULT_BIND)
         etFakeSni.setText("")
         etUpstreamProxy.setText("")

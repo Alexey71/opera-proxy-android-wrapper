@@ -7,15 +7,15 @@ android {
     compileSdk 34
     defaultConfig {
         applicationId "com.example.operaproxy"
-        minSdk 29
+        minSdk 21
         targetSdk 34
-        versionCode 20
-        versionName "3.0.1"
+        versionCode 23
+        versionName "3.0.2"
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 		debug {

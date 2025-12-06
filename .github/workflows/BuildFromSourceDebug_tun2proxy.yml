@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Скачиваем код из репозитория
+    # 1. Скачиваем ваш код из репозитория
     - uses: actions/checkout@v3
 
     # 2. Настраиваем Java 17

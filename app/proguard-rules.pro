@@ -12,3 +12,6 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# Мне прятать нечего
+-dontobfuscate

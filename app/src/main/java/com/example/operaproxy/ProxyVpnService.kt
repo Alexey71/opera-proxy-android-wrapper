@@ -14,6 +14,8 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class ProxyVpnService : VpnService() {
     private var process: Process? = null
@@ -33,7 +35,7 @@ class ProxyVpnService : VpnService() {
     private var cleanedUp = false
 
     // Расширенные параметры
-    private var bindAddress = "127.0.0.1:1080"
+    private var bindAddress = "127.0.0.1:1080" // Адрес по умолчанию
     private var bootstrapDns = ""
     private var fakeSni = ""
     private var upstreamProxy = ""
@@ -60,8 +62,12 @@ class ProxyVpnService : VpnService() {
             verbosity: Int
         ): Int
 
+        // Добавляем метод остановки
+        @JvmStatic
+        external fun stopTun2proxy(): Int
+
         init {
-			System.loadLibrary("tun2proxy")
+            System.loadLibrary("tun2proxy")
             System.loadLibrary("native-lib")
         }
 
@@ -79,8 +85,14 @@ class ProxyVpnService : VpnService() {
         if (action == "STOP_VPN") {
             stopRequested = true
             logToUI("ЗАПРОС НА ОСТАНОВКУ СЛУЖБЫ", fromBinary = false)
-            stopVpn()
-            stopSelf()
+            
+            // Запускаем остановку в отдельном потоке, 
+            // чтобы не морозить интерфейс
+            Thread {
+                stopVpn()
+                stopSelf()
+            }.start()
+
             return START_NOT_STICKY
         }
 
@@ -124,25 +136,99 @@ class ProxyVpnService : VpnService() {
 
         if (!isRunning) {
             isRunning = true
+            stopRequested = false // Сбрасываем флаг остановки при запуске
+            cleanedUp = false
             notifyStatusChange()
 
+            // 1. Запускаем бинарник прокси в отдельном потоке
             Thread {
                 runBinary()
             }.start()
 
+            // 2. В отдельном потоке ждем поднятия порта, затем поднимаем VPN
             if (!proxyOnlyMode) {
-                val mode = if (socksMode) "TUN → SOCKS5(tun2proxy)" else "TUN → HTTP(tun2proxy)"
-                logToUI("[VPN] Режим: $mode")
-                establishVpn()
+                Thread {
+                    waitForProxyAndEstablishVpn()
+                }.start()
             } else {
                 val mode = if (socksMode) "SOCKS5-прокси без VPN" else "HTTP-прокси без VPN"
-                logToUI("[Proxy] Режим Proxy Only: $mode")
+                logToUI("[Proxy] Режим Proxy Only: $mode. Ожидание запуска порта...")
             }
         } else {
             logToUI("[WARNING] Сервис уже запущен.")
             notifyStatusChange()
         }
         return START_STICKY
+    }
+
+    /**
+     * Ждет, пока локальный порт прокси (bindAddress) станет доступен,
+     * и только после этого запускает VPN.
+     */
+    private fun waitForProxyAndEstablishVpn() {
+        val hostPort = parseBindAddress(bindAddress)
+        val host = hostPort.first
+        val port = hostPort.second
+        
+        logToUI("[INIT] Ожидание запуска прокси на $host:$port...", fromBinary = false)
+
+        var retries = 0
+        val maxRetries = 40 // 40 * 500ms = 20 секунд ожидания
+        var isConnected = false
+
+        while (retries < maxRetries && isRunning && !stopRequested) {
+            try {
+                Socket().use { socket ->
+                    socket.connect(InetSocketAddress(host, port), 200)
+                    isConnected = true
+                }
+            } catch (e: Exception) {
+                // Порт пока закрыт
+            }
+
+            if (isConnected) break
+
+            try {
+                Thread.sleep(500)
+            } catch (e: InterruptedException) {
+                break
+            }
+            retries++
+        }
+
+        if (isConnected && isRunning && !stopRequested) {
+            logToUI("[INIT] Порт $port открыт. Поднимаем VPN интерфейс...", fromBinary = false)
+            
+            // establishVpn должен вызываться, когда мы уверены, что прокси готов
+            val mode = if (socksMode) "TUN → SOCKS5(tun2proxy)" else "TUN → HTTP(tun2proxy)"
+            logToUI("[VPN] Режим: $mode")
+            establishVpn()
+        } else {
+            if (isRunning && !stopRequested) {
+                logToUI("[ERROR] Не удалось дождаться запуска локального прокси. VPN не создан.", fromBinary = false)
+                // Можно инициировать остановку, если прокси не поднялся
+                stopProxyServiceSelf()
+            }
+        }
+    }
+
+    private fun parseBindAddress(addr: String): Pair<String, Int> {
+        return try {
+            if (addr.contains(":")) {
+                val parts = addr.split(":")
+                Pair(parts[0], parts[1].toInt())
+            } else {
+                Pair("127.0.0.1", 1080)
+            }
+        } catch (e: Exception) {
+            Pair("127.0.0.1", 1080)
+        }
+    }
+    
+    private fun stopProxyServiceSelf() {
+        val intent = Intent(this, ProxyVpnService::class.java)
+        intent.action = "STOP_VPN"
+        startService(intent)
     }
 
     private fun startForegroundNotification() {
@@ -207,7 +293,7 @@ class ProxyVpnService : VpnService() {
     }
 
     private fun establishVpn() {
-        if (proxyOnlyMode) return
+        if (proxyOnlyMode || stopRequested) return
 
         try {
             logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
@@ -243,10 +329,12 @@ class ProxyVpnService : VpnService() {
                 return
             }
 
-            // fd TUN-интерфейса
-            tunFd = vpnInterface!!.fd
+            // Было: tunFd = vpnInterface!!.fd
+            // Стало: detachFd(). Мы передаем полное владение дескриптором в Native код.
+            
+            tunFd = vpnInterface!!.detachFd() 
             if (verbosity <= 10) {
-                logToUI("[VPN] TUN fd = $tunFd", fromBinary = false)
+                logToUI("[VPN] TUN fd = $tunFd (detached)", fromBinary = false)
             }
 
             // запуск tun2proxy
@@ -267,14 +355,14 @@ class ProxyVpnService : VpnService() {
             logToUI("[TUN2PROXY] Некорректный tunFd: $tunFd", fromBinary = false)
             return
         }
-		
-		// Предохранитель от повторного запуска при уже работающем потоке
-		if (tun2proxyThread != null && tun2proxyThread?.isAlive == true) {
-			if (verbosity <= 10) {
-				logToUI("[TUN2PROXY] Повторный запуск заблокирован: поток уже работает", fromBinary = false)
-			}
-			return
-		}
+        
+        // Предохранитель от повторного запуска при уже работающем потоке
+        if (tun2proxyThread != null && tun2proxyThread?.isAlive == true) {
+            if (verbosity <= 10) {
+                logToUI("[TUN2PROXY] Повторный запуск заблокирован: поток уже работает", fromBinary = false)
+            }
+            return
+        }
 
         // Собираем URL прокси для tun2proxy:
         val scheme = if (socksMode) "socks5" else "http"
@@ -284,7 +372,7 @@ class ProxyVpnService : VpnService() {
         val mtuChar: Char = 1500.toChar()
 
         // Стратегия DNS:
-		// 0 соответствует Tun2proxyDns_Virtual (Fake-IP)
+        // 0 соответствует Tun2proxyDns_Virtual (Fake-IP)
         val dnsStrategy = 0
 
         // Приводим VERBOSITY к диапазону tun2proxy
@@ -296,34 +384,38 @@ class ProxyVpnService : VpnService() {
             else -> 0 // off
         }
 
-		tun2proxyThread = Thread {
-			try {
-				if (verbosity <= 10) {
-					logToUI("[TUN2PROXY] startTun2proxy($proxyUrl, fd=$tunFd)", fromBinary = false)
-				}
-				val code = startTun2proxy(
-					proxyUrl,
-					tunFd,
-					false,
-					mtuChar,
-					dnsStrategy,
-					t2pVerbosity
-				)
+        tun2proxyThread = Thread {
+            try {
+                if (verbosity <= 10) {
+                    logToUI("[TUN2PROXY] startTun2proxy($proxyUrl, fd=$tunFd)", fromBinary = false)
+                }
+                
+                // ВАЖНО: передаем true для close_fd_on_drop
+                val code = startTun2proxy(
+                    proxyUrl,
+                    tunFd,
+                    true,
+                    mtuChar,
+                    dnsStrategy,
+                    t2pVerbosity
+                )
 
-				if (verbosity <= 10) {
-					val msg = when (code) {
-						0 -> "[TUN2PROXY] Завершён успешно (код 0)"
-						-1 -> "[TUN2PROXY] Ошибка dlopen(libtun2proxy.so), код -1"
-						-2 -> "[TUN2PROXY] Не найдена функция tun2proxy_with_fd_run, код -2"
-						-3 -> "[TUN2PROXY] Повторный запуск при уже загруженной библиотеке, код -3"
-						else -> "[TUN2PROXY] Завершён с кодом $code"
-					}
-					logToUI(msg, fromBinary = false)
-				}
-			} catch (e: Throwable) {
-				logToUI("[TUN2PROXY ERROR] ${e.message}")
-			}
-		}.also { it.start() }
+                if (verbosity <= 10) {
+                    val msg = when (code) {
+                        -1 -> "[TUN2PROXY] Библиотека не загружена или функция не найдена, код -1"
+                        else -> "[TUN2PROXY] Завершён с кодом $code"
+                    }
+                    logToUI(msg, fromBinary = false)
+                }
+            } catch (e: Throwable) {
+                logToUI("[TUN2PROXY ERROR] ${e.message}")
+            } finally {
+                // Страховка: если поток завершился, обнуляем ссылку
+                if (Thread.currentThread() == tun2proxyThread) {
+                    tun2proxyThread = null
+                }
+            }
+        }.also { it.start() }
     }
 
     private fun runBinary() {
@@ -392,8 +484,8 @@ class ProxyVpnService : VpnService() {
                     args.add("https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js")
                 }
             }
-			
-			logToUI("[CMD] Запуск бинарного файла...", fromBinary = false)
+            
+            logToUI("[CMD] Запуск бинарного файла...", fromBinary = false)
             if (verbosity <= 10) {
                 logToUI("CMD: ${args.joinToString(" ")}", fromBinary = false)
             }
@@ -419,15 +511,19 @@ class ProxyVpnService : VpnService() {
         } catch (e: Exception) {
             val msg = e.message ?: ""
 
-            if (stopRequested && msg.contains("read interrupted by close() on another thread")) {
-                logToUI("[INFO] Бинарник остановлен по запросу (read interrupted).", fromBinary = false)
+            if (stopRequested && (msg.contains("read interrupted") || msg.contains("Socket is closed"))) {
+                // Это нормальное поведение при остановке
+                logToUI("[INFO] Бинарник остановлен.", fromBinary = false)
             } else {
                 logToUI("[CRITICAL BIN ERROR] $msg", fromBinary = false)
                 e.printStackTrace()
             }
         } finally {
-            stopVpn()
-            stopSelf()
+            if (!stopRequested) {
+                // Если процесс упал сам по себе, останавливаем сервис
+                stopVpn()
+                stopSelf()
+            }
         }
     }
 
@@ -458,34 +554,54 @@ class ProxyVpnService : VpnService() {
         sendBroadcast(intent)
     }
 
-	private fun stopVpn() {
-		synchronized(this) {
-			if (cleanedUp) return
-			cleanedUp = true
-		}
+    private fun stopVpn() {
+        synchronized(this) {
+            if (cleanedUp) return
+            cleanedUp = true
+        }
 
-		try {
-			vpnInterface?.close()
-			vpnInterface = null
-			tunFd = -1
+        try {
+            // 1. Сначала просим Rust остановиться корректно
+            try {
+                logToUI("[STOP] Отправка сигнала tun2proxy_stop...", fromBinary = false)
+                stopTun2proxy()
+            } catch (e: Exception) {
+                logToUI("[STOP] Ошибка вызова stopTun2proxy: ${e.message}")
+            }           
+            
+            // 2. Ждем поток tun2proxy
+            try {
+                tun2proxyThread?.join(1500) // Ждем 1.5 сек
+            } catch (e: Exception) {
+                logToUI("[STOP] Поток tun2proxy не завершился вовремя")
+            } finally {
+                if (tun2proxyThread?.isAlive == true) {
+                    tun2proxyThread?.interrupt() // Крайняя мера
+                }
+                tun2proxyThread = null
+            }
 
-			process?.destroy()
-			process = null
+            // 3. Закрываем интерфейс
+            try {
+                vpnInterface?.close()
+            } catch (_: Exception) {}
+            vpnInterface = null
+            tunFd = -1
+            
+            // 4. Убиваем процесс прокси
+            process?.destroy()
+            process = null
+            
+            // 5. Небольшая пауза
+            try { Thread.sleep(300) } catch (_: Exception){}
 
-			try {
-				tun2proxyThread?.join(1000)
-			} catch (_: InterruptedException) {
-			} finally {
-				tun2proxyThread = null
-			}
-
-			isRunning = false
-			notifyStatusChange()
-			logToUI("[STOP] Служба остановлена.")
-		} catch (e: Exception) {
-			logToUI("[STOP ERROR] ${e.message}")
-		}
-	}
+            isRunning = false
+            notifyStatusChange()
+            logToUI("[STOP] Служба остановлена.")
+        } catch (e: Exception) {
+            logToUI("[STOP ERROR] ${e.message}")
+        }
+    }
 
     override fun onDestroy() {
         stopVpn()

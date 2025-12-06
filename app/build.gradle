@@ -9,14 +9,17 @@ android {
         applicationId "com.example.operaproxy"
         minSdk 29
         targetSdk 34
-        versionCode 12
-        versionName "3.0"
+        versionCode 20
+        versionName "3.0.1"
     }
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+		debug {
+            minifyEnabled false
         }
     }
     compileOptions {
@@ -29,6 +32,11 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+	externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
         }
     }
 }

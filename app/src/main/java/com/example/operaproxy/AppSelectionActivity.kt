@@ -1,9 +1,14 @@
 package com.example.operaproxy
+
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -11,26 +16,66 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.checkbox.MaterialCheckBox
 
 class AppSelectionActivity : AppCompatActivity() {
-    data class AppInfo(val name: String, val packageName: String, val icon: android.graphics.drawable.Drawable, var isSelected: Boolean)
-    
+
+    data class AppInfo(
+        val name: String,
+        val packageName: String,
+        val icon: android.graphics.drawable.Drawable,
+        var isSelected: Boolean
+    )
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var searchInput: EditText
+    private lateinit var adapter: AppAdapter
+    private val allApps: MutableList<AppInfo> = mutableListOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val layout = androidx.constraintlayout.widget.ConstraintLayout(this)
-        layout.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        // Используем цвет из ресурсов
-        layout.setBackgroundColor(getColor(R.color.background_app))
-        
-        val recyclerView = RecyclerView(this)
-        recyclerView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        layout.addView(recyclerView)
-        setContentView(layout)
-        
+
+        // Корневой лейаут: вертикальный, фон как в основном приложении
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(getColor(R.color.background_app))
+            setPadding(12, 12, 12, 12)
+        }
+
+        // Поле поиска по приложениям
+        searchInput = EditText(this).apply {
+            hint = "Поиск приложений"
+            setHintTextColor(getColor(R.color.text_secondary))
+            setTextColor(getColor(R.color.text_primary))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8
+            }
+        }
+        root.addView(searchInput)
+
+        // Список приложений
+        recyclerView = RecyclerView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+            layoutManager = LinearLayoutManager(this@AppSelectionActivity)
+        }
+        root.addView(recyclerView)
+
+        setContentView(root)
+
+        // Загрузка списка приложений в фоне
         Thread {
             val pm = packageManager
             val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
             intent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-            
+
             val apps = pm.queryIntentActivities(intent, 0).map {
                 val name = it.loadLabel(pm).toString()
                 val pkg = it.activityInfo.packageName
@@ -38,43 +83,86 @@ class AppSelectionActivity : AppCompatActivity() {
                 val checked = MainActivity.selectedApps.contains(pkg)
                 AppInfo(name, pkg, icon, checked)
             }
-            .sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
-            
-            runOnUiThread { recyclerView.adapter = AppAdapter(apps) }
+                .sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
+
+            allApps.clear()
+            allApps.addAll(apps)
+
+            runOnUiThread {
+                adapter = AppAdapter(allApps)
+                recyclerView.adapter = adapter
+            }
         }.start()
+
+        // Фильтрация по имени / пакету
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                val q = s?.toString() ?: ""
+                adapter.filter(q)
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
     }
-    
-    inner class AppAdapter(private val list: List<AppInfo>) : RecyclerView.Adapter<AppAdapter.Holder>() {
+
+    inner class AppAdapter(private val fullList: List<AppInfo>) :
+        RecyclerView.Adapter<AppAdapter.Holder>() {
+
+        private val filteredList: MutableList<AppInfo> = fullList.toMutableList()
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
+            val view =
+                LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
             return Holder(view)
         }
+
         override fun onBindViewHolder(holder: Holder, position: Int) {
-            val item = list[position]
+            val item = filteredList[position]
             holder.name.text = item.name
             holder.pkg.text = item.packageName
             holder.icon.setImageDrawable(item.icon)
             holder.check.isChecked = item.isSelected
-            
-            // FIX: Явно задаем слушатель, чтобы избежать ошибки компиляции с if/else
+
             val listener = View.OnClickListener {
                 item.isSelected = !item.isSelected
                 holder.check.isChecked = item.isSelected
-                
-                if (item.isSelected) { 
+
+                if (item.isSelected) {
                     if (!MainActivity.selectedApps.contains(item.packageName)) {
-                        MainActivity.selectedApps.add(item.packageName) 
+                        MainActivity.selectedApps.add(item.packageName)
                     }
-                } else { 
-                    MainActivity.selectedApps.remove(item.packageName) 
+                } else {
+                    MainActivity.selectedApps.remove(item.packageName)
                 }
             }
 
             holder.itemView.setOnClickListener(listener)
             holder.check.setOnClickListener(listener)
         }
-        override fun getItemCount() = list.size
-        
+
+        override fun getItemCount() = filteredList.size
+
+        fun filter(query: String) {
+            val q = query.trim().lowercase()
+            filteredList.clear()
+            if (q.isEmpty()) {
+                filteredList.addAll(fullList)
+            } else {
+                filteredList.addAll(
+                    fullList.filter {
+                        it.name.lowercase().contains(q) ||
+                                it.packageName.lowercase().contains(q)
+                    }
+                )
+            }
+            // сохраняем сортировку: выбранные наверх
+            filteredList.sortWith(
+                compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name }
+            )
+            notifyDataSetChanged()
+        }
+
         inner class Holder(v: View) : RecyclerView.ViewHolder(v) {
             val name: TextView = v.findViewById(R.id.appName)
             val pkg: TextView = v.findViewById(R.id.appPkg)

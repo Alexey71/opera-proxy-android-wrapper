@@ -55,6 +55,12 @@
     <!-- Ошибки валидации -->
     <string name="err_invalid_format">Неверный формат</string>
     <string name="err_required">Обязательное поле</string>
+	
+    <!-- Режимы работы для уведомления -->
+    <string name="notification_mode_proxy_http_no_vpn">HTTP-proxy</string>
+    <string name="notification_mode_proxy_socks_no_vpn">SOCKS5-proxy</string>
+    <string name="notification_mode_vpn_http">VPN: TUN → HTTP(tun2proxy)</string>
+    <string name="notification_mode_vpn_socks">VPN: TUN → SOCKS5(tun2proxy)</string>
 
     <!-- Массивы значений -->
     <string-array name="verbosity_levels">

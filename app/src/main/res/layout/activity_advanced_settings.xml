@@ -10,13 +10,14 @@
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:background="@color/background_card">
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="@string/advanced_settings_title"
             app:titleTextColor="@color/white"
-            app:navigationIcon="?attr/homeAsUpIndicator"/>
+            app:navigationIcon="?attr/homeAsUpIndicator" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -28,26 +29,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <!-- Группа: Сеть -->
             <TextView
                 android:text="Локальная сеть"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"/>
-				
-			<com.google.android.material.switchmaterial.SwitchMaterial
+                android:layout_marginBottom="6dp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/swProxyOnly"
                 android:text="@string/pref_proxy_only"
                 android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:paddingEnd="12dp"/>
+                android:layout_marginBottom="4dp"
+                android:paddingEnd="4dp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBindAddress"
@@ -61,13 +65,14 @@
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etBindAddress"
                     android:inputType="text"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
@@ -76,18 +81,18 @@
                 android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:paddingEnd="12dp"/>
+                android:layout_marginBottom="10dp"
+                android:paddingEnd="4dp" />
 
             <!-- Группа: Трафик -->
             <TextView
                 android:text="Трафик и маскировка"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="6dp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilFakeSni"
@@ -101,13 +106,14 @@
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etFakeSni"
                     android:inputType="textUri"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -122,13 +128,14 @@
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="10dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUpstreamProxy"
                     android:inputType="textUri"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Группа: DNS -->
@@ -136,11 +143,12 @@
                 android:text="DNS"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="6dp" />
 
+            <!-- Строчка, при нажатии открывается диалог редактирования DNS -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBootstrapDns"
                 android:layout_width="match_parent"
@@ -153,17 +161,22 @@
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etBootstrapDns"
-                    android:inputType="textMultiLine"
-                    android:textColor="@color/text_primary"
-                    android:minLines="3"
-                    android:gravity="top"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="@color/text_primary"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:clickable="true"
+                    android:cursorVisible="false" />
             </com.google.android.material.textfield.TextInputLayout>
-			
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilTestUrl"
                 android:layout_width="match_parent"
@@ -176,55 +189,61 @@
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="10dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etTestUrl"
                     android:inputType="textUri"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-            </com.google.android.material.textfield.TextInputLayout>			
-			
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- Группа: Логи -->
             <TextView
                 android:text="Отладка"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"/>
-            
+                android:layout_marginBottom="4dp" />
+
             <LinearLayout
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/item_background"
-                android:padding="8dp"
-                android:layout_marginBottom="24dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginBottom="12dp">
+
                 <TextView
                     android:text="@string/pref_verbosity"
                     android:textColor="@color/text_primary"
                     android:layout_weight="1"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content" />
+
                 <Spinner
                     android:id="@+id/spVerbosity"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:minWidth="150dp"/>
+                    android:layout_height="40dp"
+                    android:minWidth="120dp" />
             </LinearLayout>
-			
-			<!-- КОМАНДНАЯ СТРОКА -->
+
+            <!-- КОМАНДНАЯ СТРОКА -->
             <TextView
                 android:text="@string/pref_cmd_args"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="4dp" />
 
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/swManualMode"
@@ -232,8 +251,8 @@
                 android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:paddingEnd="12dp"/>
+                android:layout_marginBottom="6dp"
+                android:paddingEnd="4dp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilCmdPreview"
@@ -244,7 +263,8 @@
                 app:hintTextColor="@color/opera_red"
                 app:boxStrokeColor="@color/opera_red"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="12dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etCmdPreview"
                     android:inputType="textMultiLine"
@@ -254,7 +274,7 @@
                     android:minLines="3"
                     android:gravity="top"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Кнопки -->
@@ -262,9 +282,9 @@
                 android:id="@+id/btnSave"
                 android:text="@string/btn_save"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                app:backgroundTint="@color/opera_red"/>
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                app:backgroundTint="@color/opera_red" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReset"
@@ -272,8 +292,7 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:textColor="@color/text_secondary"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"/>
-
+                android:layout_height="44dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

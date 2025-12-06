@@ -9,14 +9,80 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
             
             <!-- Карточка региона -->
-            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardCornerRadius="16dp" app:cardElevation="4dp" android:layout_marginBottom="12dp" app:cardBackgroundColor="@color/background_card" app:strokeColor="@color/divider" app:strokeWidth="1dp">
-                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:text="@string/region_title" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12dp"/>
-                    
-                    <RadioGroup android:id="@+id/rgCountry" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                        <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/rbEU" android:text="Европа" android:textSize="16sp" android:textColor="@color/text_primary" app:buttonTint="@color/opera_red" android:checked="true" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp"/>
-                        <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/rbAS" android:text="Азия" android:textSize="16sp" android:textColor="@color/text_primary" app:buttonTint="@color/opera_red" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp"/>
-                        <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/rbAM" android:text="Америка" android:textSize="16sp" android:textColor="@color/text_primary" app:buttonTint="@color/opera_red" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp"/>
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="8dp"
+                app:cardBackgroundColor="@color/background_card"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:text="@string/region_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"/>
+
+                    <!-- Регион: горизонтальное расположение -->
+                    <RadioGroup
+                        android:id="@+id/rgCountry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbEU"
+                            android:text="Европа"
+                            android:textSize="16sp"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:checked="true"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbAS"
+                            android:text="Азия"
+                            android:textSize="16sp"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbAM"
+                            android:text="Америка"
+                            android:textSize="16sp"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"/>
                     </RadioGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -93,7 +159,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:fillViewport="true">
-                    <!-- Добавили textIsSelectable для возможности выделения пальцем -->
                     <TextView 
                         android:id="@+id/tvLog" 
                         android:layout_width="match_parent" 

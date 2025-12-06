@@ -1,7 +1,7 @@
 name: Build Proxy Opera Dark (From Source)
 
 on:
-  push:
+  #push:
   workflow_dispatch:
 
 jobs:

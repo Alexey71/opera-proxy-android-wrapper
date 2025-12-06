@@ -25,7 +25,6 @@
         </activity>
         
         <activity android:name=".AppSelectionActivity" android:label="@string/app_selector_btn" android:parentActivityName=".MainActivity"/>
-        <!-- NEW ACTIVITY -->
         <activity android:name=".AdvancedSettingsActivity" android:label="@string/advanced_settings_title" android:parentActivityName=".MainActivity"/>
         
         <service

@@ -51,6 +51,21 @@
 	<string name="pref_cmd_args">Аргументы запуска</string>
     <string name="pref_manual_mode">Ручное редактирование команды</string>
     <string name="help_manual_mode">Если включено, сервис использует строку ниже как аргументы запуска (игнорируя другие настройки выше). Пути к бинарнику и сертификату добавляются автоматически.</string>
+	
+	<string name="pref_tun_dns_strategy">Tun2Proxy DNS</string>
+    <string name="help_tun_dns_strategy">Метод обработки DNS-запросов внутри VPN-туннеля:\nVirtual: Fake-IP (быстро, но может ломать некоторые приложения)\nOver TCP: Отправка DNS через TCP прокси (стабильно)\nDirect: Напрямую (игнорируя прокси)</string>
+
+    <string-array name="dns_strategy_labels">
+        <item>Virtual (Fake-IP)</item>
+        <item>Over TCP (Default)</item>
+        <item>Direct</item>
+    </string-array>
+
+    <string-array name="dns_strategy_values">
+        <item>0</item> <!-- Tun2proxyDns_Virtual -->
+        <item>1</item> <!-- Tun2proxyDns_OverTcp -->
+        <item>2</item> <!-- Tun2proxyDns_Direct -->
+    </string-array>
 
     <!-- Ошибки валидации -->
     <string name="err_invalid_format">Неверный формат</string>
@@ -64,6 +79,7 @@
 
     <!-- Массивы значений -->
     <string-array name="verbosity_levels">
+		<item>Wrapper (App Only)</item>
         <item>10 (Debug)</item>
         <item>20 (Info)</item>
         <item>30 (Warning)</item>
@@ -72,6 +88,7 @@
     </string-array>
     
     <string-array name="verbosity_values">
+		<item>5</item>
         <item>10</item>
         <item>20</item>
         <item>30</item>

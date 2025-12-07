@@ -10,6 +10,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
+import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -29,6 +30,8 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     private lateinit var etBootstrapDns: TextInputEditText
     private lateinit var swSocksMode: SwitchMaterial
     private lateinit var spVerbosity: Spinner
+    private lateinit var spDnsStrategy: Spinner
+    private lateinit var ivHelpDnsStrategy: ImageView
     private lateinit var etTestUrl: TextInputEditText
     private lateinit var swManualMode: SwitchMaterial
     private lateinit var etCmdPreview: TextInputEditText
@@ -40,6 +43,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     private val DEFAULT_TEST_URL =
         "https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"
     private val DEFAULT_VERBOSITY_INDEX = 1 // 20 Info
+	private val DEFAULT_DNS_STRATEGY_INDEX = 1 // 1 = OverTcp (Default)
 
     // Временные переменные для генерации превью
     private var mainCountry = "EU"
@@ -98,9 +102,9 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         tilBootstrapDns = findViewById(R.id.tilBootstrapDns)
         etBootstrapDns = findViewById(R.id.etBootstrapDns)
         swSocksMode = findViewById(R.id.swSocksMode)
+        spDnsStrategy = findViewById(R.id.spDnsStrategy)
+        ivHelpDnsStrategy = findViewById(R.id.ivHelpDnsStrategy)
         spVerbosity = findViewById(R.id.spVerbosity)
-
-        // Инициализация новых View
         etTestUrl = findViewById(R.id.etTestUrl)
         swManualMode = findViewById(R.id.swManualMode)
         etCmdPreview = findViewById(R.id.etCmdPreview)
@@ -112,6 +116,14 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         )
         verbosityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spVerbosity.adapter = verbosityAdapter
+		
+        val dnsStrategyAdapter = ArrayAdapter.createFromResource(
+            this,
+            R.array.dns_strategy_labels,
+            android.R.layout.simple_spinner_item
+        )
+		dnsStrategyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spDnsStrategy.adapter = dnsStrategyAdapter
     }
 
     // Немедленное сохранение состояния свитчей в SharedPreferences
@@ -257,6 +269,10 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             showInfoDialog(getString(R.string.pref_manual_mode), getString(R.string.help_manual_mode))
             true
         }
+		
+        ivHelpDnsStrategy.setOnClickListener {
+            showInfoDialog(getString(R.string.pref_tun_dns_strategy), getString(R.string.help_tun_dns_strategy))
+        }
     }
 
     private fun showInfoDialog(title: String, message: String) {
@@ -275,6 +291,18 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         etBootstrapDns.setText(prefs.getString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP))
         swSocksMode.isChecked = prefs.getBoolean("SOCKS_MODE", false)
         etTestUrl.setText(prefs.getString("TEST_URL", DEFAULT_TEST_URL))
+		
+        try {
+            val strategyVal = prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1) // Default OverTcp (1)
+            val strategyValues = resources.getStringArray(R.array.dns_strategy_values)
+            var index = strategyValues.indexOf(strategyVal.toString())
+            if (index < 0 || index >= spDnsStrategy.adapter.count) {
+                index = DEFAULT_DNS_STRATEGY_INDEX
+            }
+            spDnsStrategy.setSelection(index)
+        } catch (e: Exception) {
+            spDnsStrategy.setSelection(DEFAULT_DNS_STRATEGY_INDEX)
+        }
 
         try {
             val verbosityVal = prefs.getInt("VERBOSITY", 20)
@@ -340,6 +368,11 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         val safePos =
             if (selectedPos >= 0 && selectedPos < verbosityValues.size) selectedPos else DEFAULT_VERBOSITY_INDEX
         val selectedVerbosity = verbosityValues[safePos].toInt()
+		
+        val strategyValues = resources.getStringArray(R.array.dns_strategy_values)
+        val stratPos = spDnsStrategy.selectedItemPosition
+        val safeStratPos = if (stratPos >= 0 && stratPos < strategyValues.size) stratPos else DEFAULT_DNS_STRATEGY_INDEX
+        val selectedStrategy = strategyValues[safeStratPos].toInt()
 
         prefs.edit()
             // свитчеры уже сохраняются немедленно, но дублирующая запись не мешает
@@ -350,6 +383,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .putString("BOOTSTRAP_DNS", etBootstrapDns.text.toString())
             .putBoolean("SOCKS_MODE", swSocksMode.isChecked)
             .putInt("VERBOSITY", selectedVerbosity)
+			.putInt("TUN2PROXY_DNS_STRATEGY", selectedStrategy)
             .putString("TEST_URL", etTestUrl.text.toString())
             .putBoolean("MANUAL_CMD_MODE", swManualMode.isChecked)
             .putString("CUSTOM_CMD_STRING", etCmdPreview.text.toString())
@@ -365,6 +399,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         swSocksMode.isChecked = false
         etTestUrl.setText(DEFAULT_TEST_URL)
         spVerbosity.setSelection(DEFAULT_VERBOSITY_INDEX)
+		spDnsStrategy.setSelection(DEFAULT_DNS_STRATEGY_INDEX)
         swManualMode.isChecked = false
         etCmdPreview.setText("")
         etCmdPreview.isEnabled = false
@@ -377,6 +412,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .putString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP)
             .putBoolean("SOCKS_MODE", false)
             .putInt("VERBOSITY", 20)
+			.putInt("TUN2PROXY_DNS_STRATEGY", 1)
             .putString("TEST_URL", DEFAULT_TEST_URL)
             .putBoolean("MANUAL_CMD_MODE", false)
             .putString("CUSTOM_CMD_STRING", "")

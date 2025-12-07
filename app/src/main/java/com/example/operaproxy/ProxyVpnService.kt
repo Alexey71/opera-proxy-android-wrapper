@@ -35,15 +35,13 @@ class ProxyVpnService : VpnService() {
     private var cleanedUp = false
 
     // Расширенные параметры
-    private var bindAddress = "127.0.0.1:1080" // Адрес по умолчанию
+    private var bindAddress = "127.0.0.1:1080"
     private var bootstrapDns = ""
     private var fakeSni = ""
     private var upstreamProxy = ""
     private var testUrl = ""
-
-    // По умолчанию 20, но будет перезаписано из Intent
     private var verbosity = 20
-
+	private var tunDnsStrategy = 1 
     private var socksMode = false
     private var proxyOnlyMode = false
 
@@ -54,6 +52,7 @@ class ProxyVpnService : VpnService() {
     companion object {
         @JvmStatic
         external fun startTun2proxy(
+			service: ProxyVpnService,
             proxyUrl: String,
             tunFd: Int,
             closeFdOnDrop: Boolean,
@@ -110,6 +109,7 @@ class ProxyVpnService : VpnService() {
             testUrl = intent.getStringExtra("TEST_URL") ?: ""
             manualCmdMode = intent.getBooleanExtra("MANUAL_CMD_MODE", false)
             customCmdString = intent.getStringExtra("CUSTOM_CMD_STRING") ?: ""
+			tunDnsStrategy = intent.getIntExtra("TUN2PROXY_DNS_STRATEGY", 1)
 
             if (manualCmdMode) {
                 logDebug("[CONFIG] ВКЛЮЧЕН РУЧНОЙ РЕЖИМ КОМАНДЫ")
@@ -128,6 +128,7 @@ class ProxyVpnService : VpnService() {
                 logToUI("[ADV] UPSTREAM PROXY: $upstreamProxy")
                 logToUI("[ADV] MODE: ${if (socksMode) "SOCKS" else "HTTP"}")
                 logToUI("[ADV] TEST URL: $testUrl")
+				logToUI("[ADV] TUN DNS STRATEGY: $tunDnsStrategy (0=Virt, 1=TCP, 2=Direct)")
                 logToUI("[ADV] VERBOSITY: $verbosity")
             }
         }
@@ -298,7 +299,7 @@ class ProxyVpnService : VpnService() {
         try {
             logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
             val builder = Builder()
-            builder.setSession("OperaTurbo")
+            builder.setSession("OperaProxy")
             builder.setMtu(1500)
             builder.addAddress("10.1.10.1", 24)
 
@@ -307,18 +308,22 @@ class ProxyVpnService : VpnService() {
             } catch (e: Exception) {
                 builder.addDnsServer("8.8.8.8")
             }
+			
+			// Фильтруем список приложений
+			val safeAllowedApps = allowedApps?.filter { it != packageName } ?: emptyList()
 
-            if (!allowedApps.isNullOrEmpty()) {
-                logToUI("[ROUTING] Белый список приложений включен.")
-                for (pkg in allowedApps!!) {
-                    try {
-                        builder.addAllowedApplication(pkg)
-                    } catch (_: Exception) {
-                    }
-                }
-            } else {
-                builder.addDisallowedApplication(packageName)
-            }
+			if (safeAllowedApps.isNotEmpty()) {
+				logToUI("[ROUTING] Белый список приложений включен (${safeAllowedApps.size}).")
+				for (pkg in safeAllowedApps) {
+					try {
+						builder.addAllowedApplication(pkg)
+					} catch (_: Exception) {}
+				}
+			} else {
+				// Если список пуст или пользователь выбрал только само приложение - 
+				// исключаем себя, чтобы избежать петли, и проксируем всё остальное
+				builder.addDisallowedApplication(packageName)
+			}
 
             builder.addRoute("0.0.0.0", 0)
 
@@ -349,6 +354,12 @@ class ProxyVpnService : VpnService() {
             stopVpn()
         }
     }
+	
+	fun onTun2ProxyLog(message: String) {
+		if (verbosity == 5 || verbosity <= 10) {
+			logToUI("[tun2proxy] $message", fromBinary = false)
+		}
+	}
 
     private fun startTun2proxyWorker() {
         if (tunFd <= 0) {
@@ -363,20 +374,34 @@ class ProxyVpnService : VpnService() {
             }
             return
         }
+		
+        // Оптимизация соединения:
+        // Если прокси слушает локально (даже на 0.0.0.0), клиенту tun2proxy
+        // безопаснее и быстрее подключаться к 127.0.0.1.
+        // Это гарантирует проход через Loopback интерфейс, который всегда доступен.
+        val targetHost = if (bindAddress.startsWith("0.0.0.0") || bindAddress.startsWith(":")) {
+            "127.0.0.1"
+        } else {
+            // Если пользователь указал специфичный IP, берем его
+            parseBindAddress(bindAddress).first
+        }
+        
+        val targetPort = parseBindAddress(bindAddress).second		
 
         // Собираем URL прокси для tun2proxy:
         val scheme = if (socksMode) "socks5" else "http"
-        val proxyUrl = "$scheme://$bindAddress"
+		// Формируем URL для внутреннего соединения: socks5://127.0.0.1:1080
+        val proxyUrl = "$scheme://$targetHost:$targetPort"
 
         // MTU — тот же, что задаётся Builder'у
         val mtuChar: Char = 1500.toChar()
 
-        // Стратегия DNS:
-        // 0 соответствует Tun2proxyDns_Virtual (Fake-IP)
-        val dnsStrategy = 0
+        // Стратегия DNS берем из переменной класса
+        val dnsStrategy = tunDnsStrategy
 
         // Приводим VERBOSITY к диапазону tun2proxy
         val t2pVerbosity = when {
+			verbosity == 5 -> 3 // Wrapper: ставим Info (3) для tun2proxy
             verbosity <= 10 -> 4 // debug
             verbosity <= 20 -> 3 // info
             verbosity <= 30 -> 2 // warn
@@ -387,11 +412,11 @@ class ProxyVpnService : VpnService() {
         tun2proxyThread = Thread {
             try {
                 if (verbosity <= 10) {
-                    logToUI("[TUN2PROXY] startTun2proxy($proxyUrl, fd=$tunFd)", fromBinary = false)
+                    logToUI("[TUN2PROXY] startTun2proxy($proxyUrl, fd=$tunFd, dns=$dnsStrategy)", fromBinary = false)
                 }
                 
-                // ВАЖНО: передаем true для close_fd_on_drop
                 val code = startTun2proxy(
+					this,
                     proxyUrl,
                     tunFd,
                     true,
@@ -461,7 +486,12 @@ class ProxyVpnService : VpnService() {
                 // Автоматический режим
                 args.add("-bind-address"); args.add(bindAddress)
                 args.add("-country"); args.add(currentCountry)
-                args.add("-verbosity"); args.add(verbosity.toString())
+                args.add("-verbosity")
+                if (verbosity == 5) {
+                    args.add("50") 
+                } else {
+                    args.add(verbosity.toString())
+                }
                 args.add("-cafile"); args.add(sslFile.absolutePath)
 
                 if (bootstrapDns.isNotEmpty()) {
@@ -529,6 +559,15 @@ class ProxyVpnService : VpnService() {
 
     private fun logToUI(message: String?, fromBinary: Boolean = false) {
         if (message == null) return
+		
+		if (verbosity == 5) {
+			if (fromBinary) return
+            val intent = Intent("UPDATE_LOG")
+            intent.putExtra("log", message)
+            intent.setPackage(packageName)
+            sendBroadcast(intent)
+            return
+        }
 
         val showSystemLog = !fromBinary && verbosity <= 20
 
@@ -593,7 +632,7 @@ class ProxyVpnService : VpnService() {
             process = null
             
             // 5. Небольшая пауза
-            try { Thread.sleep(300) } catch (_: Exception){}
+            try { Thread.sleep(200) } catch (_: Exception){}
 
             isRunning = false
             notifyStatusChange()
@@ -604,7 +643,7 @@ class ProxyVpnService : VpnService() {
     }
 
     override fun onDestroy() {
-        stopVpn()
+		stopVpn()
         super.onDestroy()
     }
 }

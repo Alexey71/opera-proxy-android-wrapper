@@ -5,12 +5,15 @@ plugins {
 android {
     namespace 'com.example.operaproxy'
     compileSdk 34
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId "com.example.operaproxy"
         minSdk 21
         targetSdk 34
-        versionCode 23
-        versionName "3.0.2"
+        versionCode 25
+        versionName "3.0.3"
     }
     buildTypes {
         release {

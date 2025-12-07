@@ -83,6 +83,13 @@ class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences("OperaProxyPrefs", Context.MODE_PRIVATE)
 
         initViews()
+		
+		val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+		setSupportActionBar(toolbar)
+		val appName = getString(R.string.app_name)
+		val version = BuildConfig.VERSION_NAME
+		supportActionBar?.title = "$appName v$version"
+		
         setupListeners()
 		
 			val logFilter = IntentFilter("UPDATE_LOG")
@@ -210,6 +217,7 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("SOCKS_MODE", prefs.getBoolean("SOCKS_MODE", false))
         intent.putExtra("PROXY_ONLY", prefs.getBoolean("PROXY_ONLY", false))
         intent.putExtra("VERBOSITY", verbosity)
+		intent.putExtra("TUN2PROXY_DNS_STRATEGY", prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1))
 		intent.putExtra("TEST_URL", prefs.getString("TEST_URL", ""))
         intent.putExtra("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
         intent.putExtra("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))

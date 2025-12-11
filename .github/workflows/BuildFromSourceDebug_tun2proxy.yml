@@ -26,10 +26,10 @@ jobs:
         gradle-version: '8.5'
 
     # 4. Устанавливаем утилиты для работы с архивами и JSON
-    - name: Install tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y unzip jq
+    #- name: Install tools
+    #  run: |
+    #    sudo apt-get update
+    #    sudo apt-get install -y unzip jq
 
     # 5. Скачиваем внешние зависимости (динамически берём latest релизы)
     - name: Download External Binaries
@@ -78,19 +78,27 @@ jobs:
         # Копируем libtun2proxy.so для arm64-v8a в jniLibs
         cp tun2proxy-android-libs-extract/tun2proxy-android-libs/arm64-v8a/libtun2proxy.so \
            app/src/main/jniLibs/arm64-v8a/libtun2proxy.so
+           
+    # 6. Извлекаем версию из Gradle
+    - name: Extract Version Name
+      run: |
+        echo "Extracting version..."
+        VERSION_NAME=$(grep "versionName" app/build.gradle | awk '{print $2}' | tr -d '"' | tr -d "'")
+        echo "Detected App Version: $VERSION_NAME"
+        echo "APP_VERSION=$VERSION_NAME" >> $GITHUB_ENV
 
-    # 6. Сборка
+    # 7. Сборка
     - name: Build with Gradle
       run: gradle assembleDebug --stacktrace
       
     - name: Rename APK to Opera_Proxy_v3.apk
       run: |
         ls -R app/build/outputs/apk || true
-        cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Opera_Proxy_v3.apk
+        cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Opera_Proxy_v${{ env.APP_VERSION }}.apk
 
-    # 7. Загрузка готового APK
+    # 8. Загрузка готового APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: Opera_Proxy_v3
-        path: app/build/outputs/apk/debug/Opera_Proxy_v3.apk
+        name: Opera_Proxy_v${{ env.APP_VERSION }}
+        path: app/build/outputs/apk/debug/Opera_Proxy_v${{ env.APP_VERSION }}.apk

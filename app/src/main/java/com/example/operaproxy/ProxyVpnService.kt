@@ -174,7 +174,7 @@ class ProxyVpnService : VpnService() {
         logToUI("[INIT] Ожидание запуска прокси на $host:$port...", fromBinary = false)
 
         var retries = 0
-        val maxRetries = 40 // 40 * 500ms = 20 секунд ожидания
+        val maxRetries = 120 // 120 * 600ms = 72 секунды ожидания
         var isConnected = false
 
         while (retries < maxRetries && isRunning && !stopRequested) {
@@ -190,7 +190,7 @@ class ProxyVpnService : VpnService() {
             if (isConnected) break
 
             try {
-                Thread.sleep(500)
+                Thread.sleep(600)
             } catch (e: InterruptedException) {
                 break
             }
@@ -300,7 +300,7 @@ class ProxyVpnService : VpnService() {
             logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
             val builder = Builder()
             builder.setSession("OperaProxy")
-            builder.setMtu(1500)
+            builder.setMtu(1420)
             builder.addAddress("10.1.10.1", 24)
 
             try {
@@ -394,7 +394,7 @@ class ProxyVpnService : VpnService() {
         val proxyUrl = "$scheme://$targetHost:$targetPort"
 
         // MTU — тот же, что задаётся Builder'у
-        val mtuChar: Char = 1500.toChar()
+        val mtuChar: Char = 1420.toChar()
 
         // Стратегия DNS берем из переменной класса
         val dnsStrategy = tunDnsStrategy
@@ -586,11 +586,17 @@ class ProxyVpnService : VpnService() {
         }
     }
 
-    // Отправка статуса в Activity
+    // Отправка статуса в Activity и Плитке
     private fun notifyStatusChange() {
+		// Уведомляем Activity
         val intent = Intent("STATUS_UPDATE")
         intent.setPackage(packageName)
         sendBroadcast(intent)
+		
+        // Уведомляем Плитку (Quick Settings)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+             ProxyTileService.requestUpdate(this)
+        }
     }
 
     private fun stopVpn() {

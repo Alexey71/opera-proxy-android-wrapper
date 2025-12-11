@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Proxy Opera Turbo</string>
+	<string name="tile_label">Proxy Opera</string>
     
     <!-- Основной экран -->
     <string name="region_title">Регион</string>
@@ -9,7 +10,7 @@
     <string name="btn_stop">Остановить прокси</string>
     <string name="logs_title">Лог:</string>
     <string name="app_selector_btn">Выбрать приложения</string>
-    <string name="app_selector_desc">* Невыбранные приложения работают без VPN. </string>
+    <string name="app_selector_desc">* Если не выбрать приложения, VPN включается для всей системы </string>
     <string name="dns_hint">DNS Сервер (VPN интерфейс)</string>
     <string name="notification_channel">Сервис Opera Turbo</string>
     <string name="notification_title">Opera Turbo Активен</string>
@@ -95,4 +96,8 @@
         <item>40</item>
         <item>50</item>
     </string-array>
+	
+    <string name="about_section">О программе</string>
+    <string name="github_link_text">Новые релизы (GitHub SLY-F0X)</string>
+	
 </resources>

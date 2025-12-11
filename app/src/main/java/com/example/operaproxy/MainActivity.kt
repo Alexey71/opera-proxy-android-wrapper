@@ -10,9 +10,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.widget.Button
 import android.widget.RadioGroup
 import android.widget.ScrollView
@@ -103,8 +106,27 @@ class MainActivity : AppCompatActivity() {
 				registerReceiver(statusReceiver, statusFilter)
 			}
 		loadSettings()
-		
+	// Проверка оптимизации батареи
+    checkBatteryOptimization()
 	}
+
+    private fun checkBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val packageName = packageName
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                try {
+                    val intent = Intent().apply {
+                        action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     private fun initViews() {
         tvLog = findViewById(R.id.tvLog)

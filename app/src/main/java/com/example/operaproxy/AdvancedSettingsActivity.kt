@@ -11,6 +11,8 @@ import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
 import android.widget.ImageView
+import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -91,6 +93,16 @@ class AdvancedSettingsActivity : AppCompatActivity() {
                 .setPositiveButton("Да") { _, _ -> resetDefaults() }
                 .setNegativeButton("Отмена", null)
                 .show()
+        }
+		
+        findViewById<View>(R.id.btnGithubLink).setOnClickListener {
+            val url = "https://github.com/SLY-F0X/opera-proxy-android-wrapper/releases"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

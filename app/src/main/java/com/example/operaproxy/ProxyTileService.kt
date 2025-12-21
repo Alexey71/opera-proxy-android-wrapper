@@ -18,47 +18,51 @@ class ProxyTileService : TileService() {
         updateTileState()
     }
 
+    private fun isServiceRunning(): Boolean {
+        return ServiceState.isRunning(this)
+    }
+
     override fun onClick() {
         super.onClick()
-        if (ProxyVpnService.isRunning) {
-            // Остановка сервиса
-            val intent = Intent(this, ProxyVpnService::class.java)
-            intent.action = "STOP_VPN"
-            startService(intent)
-            // Обновляем UI
-            updateTile(Tile.STATE_INACTIVE)
-        } else {
-            // Запуск сервиса
-            val prepare = VpnService.prepare(this)
-            if (prepare != null) {
-                // Требуется подтверждение прав VPN, открываем Activity
-                val intent = Intent(this, MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                
-                // В Android 14 (API 34) метод с Intent устарел, используем PendingIntent
-                if (Build.VERSION.SDK_INT >= 34) {
-                    val pendingIntent = PendingIntent.getActivity(
-                        this,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    startActivityAndCollapse(pendingIntent)
-                } else {
-                    @Suppress("DEPRECATION")
-                    startActivityAndCollapse(intent)
-                }
-            } else {
-                // Права есть, запускаем сервис напрямую с сохраненными настройками
-                startProxyService()
-                updateTile(Tile.STATE_ACTIVE)
+
+        if (isServiceRunning()) {
+            val stopIntent = Intent(this, ProxyVpnService::class.java).apply {
+                action = "STOP_VPN"
             }
+            startService(stopIntent)
+            updateTile(Tile.STATE_INACTIVE)
+            return
         }
+
+        // Запуск
+        val prepareIntent = VpnService.prepare(this)
+        if (prepareIntent != null) {
+            val activityIntent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra("OPEN_VPN_PREPARE", true)
+            }
+
+            if (Build.VERSION.SDK_INT >= 34) {
+                val pi = PendingIntent.getActivity(
+                    this,
+                    0,
+                    activityIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                startActivityAndCollapse(pi)
+            } else {
+                @Suppress("DEPRECATION")
+                startActivityAndCollapse(activityIntent)
+            }
+            return
+        }
+
+        startProxyService()
+        updateTile(Tile.STATE_ACTIVE)
     }
 
     private fun updateTileState() {
-        val state = if (ProxyVpnService.isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        updateTile(state)
+        updateTile(if (isServiceRunning()) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE)
     }
 
     private fun updateTile(state: Int) {
@@ -72,21 +76,19 @@ class ProxyTileService : TileService() {
         val prefs = getSharedPreferences("OperaProxyPrefs", Context.MODE_PRIVATE)
         val intent = Intent(this, ProxyVpnService::class.java)
 
-        // Восстанавливаем настройки, аналогично MainActivity
         val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
-        val country = when(countryId) { 
-            R.id.rbAS -> "AS" 
-            R.id.rbAM -> "AM" 
-            else -> "EU" 
+        val country = when (countryId) {
+            R.id.rbAS -> "AS"
+            R.id.rbAM -> "AM"
+            else -> "EU"
         }
         intent.putExtra("COUNTRY", country)
-        
-        var dns = prefs.getString("DNS", "8.8.8.8")
-        if (dns.isNullOrEmpty()) dns = "8.8.8.8"
+
+        val dns = prefs.getString("DNS", "8.8.8.8").orEmpty().ifEmpty { "8.8.8.8" }
         intent.putExtra("DNS", dns)
 
-        val savedApps = prefs.getStringSet("APPS", emptySet())
-        if (!savedApps.isNullOrEmpty()) {
+        val savedApps = prefs.getStringSet("APPS", emptySet()).orEmpty()
+        if (savedApps.isNotEmpty()) {
             intent.putStringArrayListExtra("ALLOWED_APPS", ArrayList(savedApps))
         }
 
@@ -108,13 +110,12 @@ class ProxyTileService : TileService() {
             startService(intent)
         }
     }
-    
+
     companion object {
-        // Метод для вызова обновления плитки извне (например, из Service)
         fun requestUpdate(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                requestListeningState(context, ComponentName(context, ProxyTileService::class.java))
-            }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+            val cn = ComponentName(context, ProxyTileService::class.java)
+            requestListeningState(context, cn)
         }
     }
 }

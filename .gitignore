@@ -3,6 +3,7 @@
 
 # Log file
 *.log
+log.txt
 
 # BlueJ files
 *.ctxt
@@ -25,3 +26,8 @@ replay_pid*
 
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
+
+# Trash
+*.cmd
+*.bat
+*.com

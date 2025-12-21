@@ -16,6 +16,7 @@ import android.net.Uri
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
@@ -44,7 +45,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         "https://1.1.1.3/dns-query,https://8.8.8.8/dns-query,https://dns.google/dns-query,https://security.cloudflare-dns.com/dns-query,https://fidelity.vm-0.com/q,https://wikimedia-dns.org/dns-query,https://dns.adguard-dns.com/dns-query,https://dns.quad9.net/dns-query,https://dns.comss.one/dns-query,https://router.comss.one/dns-query"
     private val DEFAULT_TEST_URL =
         "https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"
-    private val DEFAULT_VERBOSITY_INDEX = 1 // 20 Info
+    private val DEFAULT_VERBOSITY_INDEX = 2 // 20 Info
 	private val DEFAULT_DNS_STRATEGY_INDEX = 1 // 1 = OverTcp (Default)
 
     // Временные переменные для генерации превью
@@ -105,6 +106,20 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             }
         }
     }
+	
+	override fun onResume() {
+		super.onResume()
+
+		val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
+		mainCountry = when (countryId) {
+			R.id.rbAS -> "AS"
+			R.id.rbAM -> "AM"
+			else -> "EU"
+		}
+		mainDns = prefs.getString("DNS", "8.8.8.8") ?: "8.8.8.8"
+
+		updateCmdPreview()
+	}
 
     private fun initViews() {
         swProxyOnly = findViewById(R.id.swProxyOnly)
@@ -176,7 +191,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             minLines = 4
             maxLines = 8
             isSingleLine = false
-            setTextColor(resources.getColor(R.color.text_primary, theme))
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
         }
 
         AlertDialog.Builder(this)

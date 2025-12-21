@@ -1,5 +1,6 @@
 package com.example.operaproxy
 
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -24,6 +26,9 @@ class AppSelectionActivity : AppCompatActivity() {
         var isSelected: Boolean
     )
 
+    private lateinit var prefs: android.content.SharedPreferences
+    private val selectedPkgs: MutableSet<String> = mutableSetOf()
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchInput: EditText
     private lateinit var adapter: AppAdapter
@@ -32,6 +37,10 @@ class AppSelectionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        prefs = getSharedPreferences("OperaProxyPrefs", Context.MODE_PRIVATE)
+        selectedPkgs.clear()
+        selectedPkgs.addAll(prefs.getStringSet("APPS", emptySet()).orEmpty())
+
         // Корневой лейаут: вертикальный, фон как в основном приложении
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -39,15 +48,15 @@ class AppSelectionActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(getColor(R.color.background_app))
+            setBackgroundColor(ContextCompat.getColor(context, R.color.background_app))
             setPadding(12, 12, 12, 12)
         }
 
         // Поле поиска по приложениям
         searchInput = EditText(this).apply {
             hint = "Поиск приложений"
-            setHintTextColor(getColor(R.color.text_secondary))
-            setTextColor(getColor(R.color.text_primary))
+            setHintTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -80,10 +89,9 @@ class AppSelectionActivity : AppCompatActivity() {
                 val name = it.loadLabel(pm).toString()
                 val pkg = it.activityInfo.packageName
                 val icon = it.loadIcon(pm)
-                val checked = MainActivity.selectedApps.contains(pkg)
+                val checked = selectedPkgs.contains(pkg)
                 AppInfo(name, pkg, icon, checked)
-            }
-                .sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
+            }.sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
 
             allApps.clear()
             allApps.addAll(apps)
@@ -104,6 +112,10 @@ class AppSelectionActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
+    }
+
+    private fun persistSelection() {
+        prefs.edit().putStringSet("APPS", selectedPkgs.toSet()).apply()
     }
 
     inner class AppAdapter(private val fullList: List<AppInfo>) :
@@ -129,12 +141,11 @@ class AppSelectionActivity : AppCompatActivity() {
                 holder.check.isChecked = item.isSelected
 
                 if (item.isSelected) {
-                    if (!MainActivity.selectedApps.contains(item.packageName)) {
-                        MainActivity.selectedApps.add(item.packageName)
-                    }
+                    selectedPkgs.add(item.packageName)
                 } else {
-                    MainActivity.selectedApps.remove(item.packageName)
+                    selectedPkgs.remove(item.packageName)
                 }
+                persistSelection()
             }
 
             holder.itemView.setOnClickListener(listener)

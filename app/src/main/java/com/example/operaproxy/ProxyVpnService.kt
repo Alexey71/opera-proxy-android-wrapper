@@ -280,58 +280,150 @@ class ProxyVpnService : VpnService() {
         }
     }
 
-    private fun establishVpn() {
-        if (proxyOnlyMode || stopRequested) return
+	private fun establishVpn() {
+		if (proxyOnlyMode || stopRequested) return
 
-        try {
-            logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
-            val builder = Builder()
-            builder.setSession("OperaProxy")
-            builder.setMtu(1420)
-            builder.addAddress("10.1.10.1", 24)
+		try {
+			logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
 
-            try {
-                builder.addDnsServer(tunDnsServer)
-            } catch (_: Exception) {
-                builder.addDnsServer("8.8.8.8")
-            }
+			// пробуем allowed-list (белый список)
+			var builder = buildBaseVpnBuilder()
+			builder = applyAppRoutingWithFallback(builder)
 
-            val safeAllowedApps = allowedApps?.filter { it != packageName } ?: emptyList()
+			builder.addRoute("0.0.0.0", 0)
 
-            if (safeAllowedApps.isNotEmpty()) {
-                logToUI("[ROUTING] Белый список приложений включен (${safeAllowedApps.size}).")
-                for (pkg in safeAllowedApps) {
-                    try {
-                        builder.addAllowedApplication(pkg)
-                    } catch (_: Exception) {}
-                }
-            } else {
-                builder.addDisallowedApplication(packageName)
-            }
+			vpnInterface = builder.establish()
+			if (vpnInterface == null) {
+				logToUI("[CRITICAL] Не удалось создать VPN-интерфейс. Нужно заново выдать разрешение.")
+				stopVpn()
+				return
+			}
 
-            builder.addRoute("0.0.0.0", 0)
+			tunFd = vpnInterface!!.fd
+			if (verbosity <= 10) {
+				logToUI("[VPN] TUN fd = $tunFd", fromBinary = false)
+			}
 
-            vpnInterface = builder.establish()
-            if (vpnInterface == null) {
-                logToUI("[CRITICAL] Не удалось создать VPN-интерфейс. Нужно заново выдать разрешение.")
-                stopVpn()
-                return
-            }
+			startTun2proxyWorker()
+			if (verbosity <= 10) {
+				logToUI("[TUN2PROXY] Запущен обработчик TUN - proxy", fromBinary = false)
+			}
+		} catch (e: Exception) {
+			logToUI("[CRITICAL] Ошибка VPN: ${e.javaClass.simpleName}: ${e.message}")
+			stopVpn()
+		}
+	}
+	
+	private fun buildBaseVpnBuilder(): Builder {
+		val builder = Builder()
+		builder.setSession("OperaProxy")
+		builder.setMtu(1420)
+		builder.addAddress("10.1.10.1", 24)
 
-            tunFd = vpnInterface!!.fd
-            if (verbosity <= 10) {
-                logToUI("[VPN] TUN fd = $tunFd", fromBinary = false)
-            }
+		try {
+			builder.addDnsServer(tunDnsServer)
+		} catch (_: Exception) {
+			builder.addDnsServer("8.8.8.8")
+		}
 
-            startTun2proxyWorker()
-            if (verbosity <= 10) {
-                logToUI("[TUN2PROXY] Запущен обработчик TUN → proxy", fromBinary = false)
-            }
-        } catch (e: Exception) {
-            logToUI("[CRITICAL] Ошибка VPN: ${e.message}")
-            stopVpn()
-        }
-    }
+		return builder
+	}
+
+	/**
+	 * Если ловим IllegalStateException("Cannot add both allowed and disallowed applications")
+	 * или IllegalArgumentException - не смешиваем режимы на одном Builder.
+	 * Пересоздаём Builder и строим whitelist через addDisallowedApplication (инверсия списка выбранных).
+	 */
+	private fun applyAppRoutingWithFallback(builderIn: Builder): Builder {
+		val selected = (allowedApps ?: arrayListOf()).toSet()
+		val safeSelected = selected.filter { it.isNotBlank() && it != packageName }.toSet()
+
+		// Если ничего не выбрано - просто исключаем приложение чтобы не ловить петлю
+		if (safeSelected.isEmpty()) {
+			try {
+				builderIn.addDisallowedApplication(packageName)
+			} catch (_: Exception) {}
+			return builderIn
+		}
+
+		// Пытаемся сделать белый список через addAllowedApplication
+		try {
+			logToUI("[ROUTING] Пробуем режим: ALLOWED (white list) (${safeSelected.size})")
+			for (pkg in safeSelected) {
+				try {
+					builderIn.addAllowedApplication(pkg)
+				} catch (iae: IllegalArgumentException) {
+					// пропускаем, но не переключаем режим из-за одного пакета.
+					logToUI("[ROUTING] Пропускаем приложение (IAE): $pkg", fromBinary = false)
+				}
+			}
+			return builderIn
+		} catch (ise: IllegalStateException) {
+			val msg = ise.message ?: ""
+			if (!msg.contains("Cannot add both allowed and disallowed applications")) {
+				throw ise
+			}
+			logToUI("[ROUTING] VPN ALLOWED-mode сломан в прошивке: $msg")
+		} catch (iae: IllegalArgumentException) {
+			logToUI("[ROUTING] ALLOWED-mode IAE: ${iae.message}", fromBinary = false)
+		}
+
+		// Fallback: белый список через DISALLOWED (инверсия)
+		val builder = buildBaseVpnBuilder()
+		
+		// сначала исключаем operaproxy
+		try {
+			builder.addDisallowedApplication(packageName)
+		} catch (e: Exception) {
+			logToUI("[ROUTING] Не получилось сиключить OperaProxy: ${e.javaClass.simpleName}: ${e.message}", fromBinary = false)
+			return builder
+		}
+
+		logToUI("[ROUTING] Fallback режим: DISALLOWED whitelist (инверсия списка выбранных)")
+
+		// Собираем пакеты, которые будем исключать (все launchable, кроме выбранных).
+		val disallowPkgs = getLaunchablePackagesMinus(safeSelected)
+
+		// Если список слишком большой - лучше уйти в системный VPN без фильтрации приложений
+		val maxDisallowed = 900
+		if (disallowPkgs.size > maxDisallowed) {
+			logToUI("[ROUTING] Слишком много пакетов для DISALLOWED (${disallowPkgs.size}). Отключаем фильтрацию приложений.")
+			try { builder.addDisallowedApplication(packageName) } catch (_: Exception) {}
+			return builder
+		}
+
+		for (pkg in disallowPkgs) {
+			try {
+				builder.addDisallowedApplication(pkg)
+			} catch (e: Exception) {
+				// IAE/NameNotFound/ISE на отдельных приложениях - пропускаем.
+				if (verbosity <= 10) {
+					logToUI("[ROUTING] Пропускаем приложение: $pkg (${e.javaClass.simpleName})", fromBinary = false)
+				}
+			}
+		}
+		return builder
+	}
+
+	private fun getLaunchablePackagesMinus(keep: Set<String>): Set<String> {
+		return try {
+			val pm = packageManager
+			val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null).apply {
+				addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+			}
+			val resolved = pm.queryIntentActivities(intent, 0)
+			val pkgs = HashSet<String>(resolved.size)
+			for (ri in resolved) {
+				val pkg = ri.activityInfo?.packageName ?: continue
+				if (pkg.isBlank()) continue
+				if (keep.contains(pkg)) continue
+				pkgs.add(pkg)
+			}
+			pkgs
+		} catch (_: Exception) {
+			emptySet()
+		}
+	}
 
     fun onTun2ProxyLog(message: String) {
         if (verbosity == 5 || verbosity <= 10) {

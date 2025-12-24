@@ -2,6 +2,18 @@
 
 Неофициальный Android-клиент и графическая оболочка (Wrapper) для утилиты **[opera-proxy](https://github.com/Snawoot/opera-proxy)** от Snawoot.
 
+<p align="center">
+  <a href="https://github.com/SLY-F0X/opera-proxy-android-wrapper/releases/latest"><img alt="Latest_release" src="https://img.shields.io/github/v/release/SLY-F0X/opera-proxy-android-wrapper?display_name=tag&sort=semver&style=for-the-badge"></a>
+  <a href="https://github.com/SLY-F0X/opera-proxy-android-wrapper/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/SLY-F0X/opera-proxy-android-wrapper/total?style=for-the-badge"></a>
+</p>
+
+<p align="center">
+  <img alt="Android" src="https://img.shields.io/badge/Android-5.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white">
+  <img alt="ABI" src="https://img.shields.io/badge/ABI-arm64--v8a%20%7C%20armeabi--v7a-informational?style=for-the-badge">
+  <img alt="Traffic" src="https://img.shields.io/badge/Traffic-TCP%20only-critical?style=for-the-badge">
+</p>
+
+
 Приложение позволяет использовать инфраструктуру Opera VPN как стандартный системный VPN или локальный прокси на Android-устройстве без необходимости установки браузера Opera.
 Весь трафик (или трафик выбранных приложений) маршрутизируется через серверы Opera.
 **Приложение создано для максимально простого запуска одной кнопкой.**
@@ -62,8 +74,8 @@
 5.  **Логи:** Следите за статусом подключения в окне логов внизу экрана.
 
 ## 📜 Для ковыряния в LogCat
-- **Linux:** `adb logcat | grep -i -E "OperaProxy"`
-- **Windows:** `adb logcat | findstr /I /R "OperaProxy"`
+- **Linux:** `adb logcat | grep -i -E "OperaProxy|tun2proxy|com\.example\.operaproxy|com\."`
+- **Windows:** `adb logcat | findstr /I /R "OperaProxy tun2proxy com\\.example\\.operaproxy com\\."`
 
 ## ⚠️ Отказ от ответственности
 

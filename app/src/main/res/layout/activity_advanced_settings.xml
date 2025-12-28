@@ -70,7 +70,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etBindAddress"
                     android:inputType="text"
-					android:imeOptions="actionNext"
+                    android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
@@ -112,7 +112,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etFakeSni"
                     android:inputType="textUri"
-					android:imeOptions="actionNext"
+                    android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
@@ -135,7 +135,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUpstreamProxy"
                     android:inputType="textUri"
-					android:imeOptions="actionNext"
+                    android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
@@ -151,7 +151,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp" />
 
-            <!-- Строчка, при нажатии открывается диалог редактирования DNS -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBootstrapDns"
                 android:layout_width="match_parent"
@@ -178,7 +177,7 @@
                     android:focusableInTouchMode="false"
                     android:clickable="true"
                     android:cursorVisible="false" />
-            </com.google.android.material.textfield.TextInputLayout>		
+            </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilTestUrl"
@@ -201,7 +200,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
-			
+
             <!-- Spinner для DNS Strategy -->
             <LinearLayout
                 android:orientation="horizontal"
@@ -242,8 +241,7 @@
                     android:layout_height="48dp"
                     android:minWidth="130dp"
                     android:spinnerMode="dropdown"/>
-                
-                <!-- Кнопка справки для DNS Strategy -->
+
                 <ImageView
                     android:id="@+id/ivHelpDnsStrategy"
                     android:layout_width="24dp"
@@ -254,7 +252,7 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:background="?attr/selectableItemBackgroundBorderless"/>
-            </LinearLayout>	
+            </LinearLayout>
 
             <!-- Группа: Логи -->
             <TextView
@@ -291,6 +289,17 @@
                     android:layout_height="40dp"
                     android:minWidth="120dp" />
             </LinearLayout>
+
+            <!-- НОВАЯ КНОПКА: принудительная инверсия списка приложений -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnInvertAppList"
+                android:text="Инверсия списка приложений"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:textColor="@color/text_primary"
+                app:strokeColor="@color/text_secondary"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="12dp" />
 
             <!-- КОМАНДНАЯ СТРОКА -->
             <TextView
@@ -350,8 +359,8 @@
                 android:textColor="@color/text_secondary"
                 android:layout_width="match_parent"
                 android:layout_height="44dp" />
-				
-			<!-- Ссылка на GitHub -->
+
+            <!-- Ссылка на GitHub -->
             <TextView
                 android:text="@string/about_section"
                 android:textColor="@color/opera_red"

@@ -84,13 +84,16 @@ class AppSelectionActivity : AppCompatActivity() {
             val pm = packageManager
             val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
             intent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+			
+			val selfPkg = packageName
 
-            val apps = pm.queryIntentActivities(intent, 0).map {
-                val name = it.loadLabel(pm).toString()
-                val pkg = it.activityInfo.packageName
-                val icon = it.loadIcon(pm)
-                val checked = selectedPkgs.contains(pkg)
-                AppInfo(name, pkg, icon, checked)
+			val apps = pm.queryIntentActivities(intent, 0).mapNotNull {
+				val pkg = it.activityInfo.packageName
+				if (pkg == selfPkg) return@mapNotNull null
+				val name = it.loadLabel(pm).toString()
+				val icon = it.loadIcon(pm)
+				val checked = selectedPkgs.contains(pkg)
+				AppInfo(name, pkg, icon, checked)
             }.sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
 
             allApps.clear()

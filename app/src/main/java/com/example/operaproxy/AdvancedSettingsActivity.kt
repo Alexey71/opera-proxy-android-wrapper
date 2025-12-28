@@ -8,9 +8,9 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.Toast
-import android.widget.ImageView
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
@@ -38,15 +38,18 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     private lateinit var etTestUrl: TextInputEditText
     private lateinit var swManualMode: SwitchMaterial
     private lateinit var etCmdPreview: TextInputEditText
+    private lateinit var btnInvertAppList: MaterialButton
+	
+    private val PREF_FORCE_INVERT_APPS = "FORCE_INVERT_APP_LIST"
 
     // Значения по умолчанию
     private val DEFAULT_BIND = "127.0.0.1:1080"
     private val DEFAULT_BOOTSTRAP =
         "https://1.1.1.3/dns-query,https://8.8.8.8/dns-query,https://dns.google/dns-query,https://security.cloudflare-dns.com/dns-query,https://fidelity.vm-0.com/q,https://wikimedia-dns.org/dns-query,https://dns.adguard-dns.com/dns-query,https://dns.quad9.net/dns-query,https://dns.comss.one/dns-query,https://router.comss.one/dns-query"
     private val DEFAULT_TEST_URL =
-        "https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"
+        ""
     private val DEFAULT_VERBOSITY_INDEX = 2 // 20 Info
-	private val DEFAULT_DNS_STRATEGY_INDEX = 1 // 1 = OverTcp (Default)
+    private val DEFAULT_DNS_STRATEGY_INDEX = 1 // 1 = OverTcp (Default)
 
     // Временные переменные для генерации превью
     private var mainCountry = "EU"
@@ -76,8 +79,9 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         setupTooltips()
         setupSwitchImmediatePersistence()
         setupBootstrapDnsClick()
+        setupInvertAppsButton()
         loadValues()
-        setupLivePreview() // Слушатели изменений для обновления CMD
+        setupLivePreview()
 
         findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
             if (validateInputs()) {
@@ -95,31 +99,32 @@ class AdvancedSettingsActivity : AppCompatActivity() {
                 .setNegativeButton("Отмена", null)
                 .show()
         }
-		
+
         findViewById<View>(R.id.btnGithubLink).setOnClickListener {
             val url = "https://github.com/SLY-F0X/opera-proxy-android-wrapper/releases"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             try {
                 startActivity(intent)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(this, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
             }
         }
     }
-	
-	override fun onResume() {
-		super.onResume()
 
-		val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
-		mainCountry = when (countryId) {
-			R.id.rbAS -> "AS"
-			R.id.rbAM -> "AM"
-			else -> "EU"
-		}
-		mainDns = prefs.getString("DNS", "8.8.8.8") ?: "8.8.8.8"
+    override fun onResume() {
+        super.onResume()
 
-		updateCmdPreview()
-	}
+        val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
+        mainCountry = when (countryId) {
+            R.id.rbAS -> "AS"
+            R.id.rbAM -> "AM"
+            else -> "EU"
+        }
+        mainDns = prefs.getString("DNS", "8.8.8.8") ?: "8.8.8.8"
+
+        updateInvertButtonText()
+        updateCmdPreview()
+    }
 
     private fun initViews() {
         swProxyOnly = findViewById(R.id.swProxyOnly)
@@ -135,6 +140,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         etTestUrl = findViewById(R.id.etTestUrl)
         swManualMode = findViewById(R.id.swManualMode)
         etCmdPreview = findViewById(R.id.etCmdPreview)
+        btnInvertAppList = findViewById(R.id.btnInvertAppList)
 
         val verbosityAdapter = ArrayAdapter.createFromResource(
             this,
@@ -143,14 +149,40 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         )
         verbosityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spVerbosity.adapter = verbosityAdapter
-		
+
         val dnsStrategyAdapter = ArrayAdapter.createFromResource(
             this,
             R.array.dns_strategy_labels,
             android.R.layout.simple_spinner_item
         )
-		dnsStrategyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dnsStrategyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spDnsStrategy.adapter = dnsStrategyAdapter
+    }
+
+    private fun setupInvertAppsButton() {
+        btnInvertAppList.setOnClickListener {
+            val current = prefs.getBoolean(PREF_FORCE_INVERT_APPS, false)
+            val next = !current
+            prefs.edit().putBoolean(PREF_FORCE_INVERT_APPS, next).apply()
+            updateInvertButtonText()
+
+            Toast.makeText(
+                this,
+                if (next) "Построение списка выбранных приложений через addDisallowedApplication включено. Перезапустите VPN, чтобы применить."
+                else "addDisallowedApplication выключен, используется addAllowedApplication. Перезапустите VPN, чтобы применить.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        updateInvertButtonText()
+    }
+
+    private fun updateInvertButtonText() {
+        val enabled = prefs.getBoolean(PREF_FORCE_INVERT_APPS, false)
+        btnInvertAppList.text = if (enabled) {
+            "Белый список через Disallowed: ВКЛ"
+        } else {
+            "Белый список через Disallowed: ВЫКЛ"
+        }
     }
 
     // Немедленное сохранение состояния свитчей в SharedPreferences
@@ -168,13 +200,11 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             prefs.edit().putBoolean("MANUAL_CMD_MODE", isChecked).apply()
             etCmdPreview.isEnabled = isChecked
             if (!isChecked) {
-                // При возврате в автоматику пересобираем команду
                 updateCmdPreview()
             }
         }
     }
 
-    // Клик по строке Bootstrap DNS -> диалог для редактирования многострочного текста
     private fun setupBootstrapDnsClick() {
         val clickListener = View.OnClickListener {
             showBootstrapDnsDialog()
@@ -207,7 +237,6 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .show()
     }
 
-    // Добавляем TextWatcher ко всем полям, влияющим на команду
     private fun setupLivePreview() {
         val watcher = object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -236,23 +265,19 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     }
 
     private fun updateCmdPreview() {
-        // Если включен ручной режим, не трогаем текст
         if (swManualMode.isChecked) return
 
         val sb = StringBuilder()
 
-        // Обязательные (из UI)
         sb.append("-bind-address ")
             .append(etBindAddress.text.toString().ifEmpty { DEFAULT_BIND })
         sb.append(" -country ").append(mainCountry)
 
-        // Verbosity
         val verbosityValues = resources.getStringArray(R.array.verbosity_values)
         val pos = spVerbosity.selectedItemPosition
         val safePos = if (pos in verbosityValues.indices) pos else DEFAULT_VERBOSITY_INDEX
         sb.append(" -verbosity ").append(verbosityValues[safePos])
 
-        // Опциональные
         val bootstrap = etBootstrapDns.text.toString()
         if (bootstrap.isNotEmpty()) sb.append(" -bootstrap-dns ").append(bootstrap)
 
@@ -296,7 +321,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             showInfoDialog(getString(R.string.pref_manual_mode), getString(R.string.help_manual_mode))
             true
         }
-		
+
         ivHelpDnsStrategy.setOnClickListener {
             showInfoDialog(getString(R.string.pref_tun_dns_strategy), getString(R.string.help_tun_dns_strategy))
         }
@@ -318,16 +343,18 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         etBootstrapDns.setText(prefs.getString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP))
         swSocksMode.isChecked = prefs.getBoolean("SOCKS_MODE", false)
         etTestUrl.setText(prefs.getString("TEST_URL", DEFAULT_TEST_URL))
-		
+
+        updateInvertButtonText()
+
         try {
-            val strategyVal = prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1) // Default OverTcp (1)
+            val strategyVal = prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1)
             val strategyValues = resources.getStringArray(R.array.dns_strategy_values)
             var index = strategyValues.indexOf(strategyVal.toString())
             if (index < 0 || index >= spDnsStrategy.adapter.count) {
                 index = DEFAULT_DNS_STRATEGY_INDEX
             }
             spDnsStrategy.setSelection(index)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             spDnsStrategy.setSelection(DEFAULT_DNS_STRATEGY_INDEX)
         }
 
@@ -339,11 +366,10 @@ class AdvancedSettingsActivity : AppCompatActivity() {
                 index = DEFAULT_VERBOSITY_INDEX
             }
             spVerbosity.setSelection(index)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             spVerbosity.setSelection(DEFAULT_VERBOSITY_INDEX)
         }
 
-        // Загрузка состояния командной строки
         val isManual = prefs.getBoolean("MANUAL_CMD_MODE", false)
         swManualMode.isChecked = isManual
         if (isManual) {
@@ -380,7 +406,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         val proxyText = etUpstreamProxy.text.toString()
         if (proxyText.isNotEmpty() && !proxyText.matches(Regex("^(http|https|socks5|socks5h)://.*"))) {
             findViewById<TextInputLayout>(R.id.tilUpstreamProxy).error =
-                "Должен начинаться с http://, socks5:// etc."
+                "Должен начинаться с http://, https://, socks5://, socks5h://."
             isValid = false
         } else {
             findViewById<TextInputLayout>(R.id.tilUpstreamProxy).error = null
@@ -395,14 +421,14 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         val safePos =
             if (selectedPos >= 0 && selectedPos < verbosityValues.size) selectedPos else DEFAULT_VERBOSITY_INDEX
         val selectedVerbosity = verbosityValues[safePos].toInt()
-		
+
         val strategyValues = resources.getStringArray(R.array.dns_strategy_values)
         val stratPos = spDnsStrategy.selectedItemPosition
-        val safeStratPos = if (stratPos >= 0 && stratPos < strategyValues.size) stratPos else DEFAULT_DNS_STRATEGY_INDEX
+        val safeStratPos =
+            if (stratPos >= 0 && stratPos < strategyValues.size) stratPos else DEFAULT_DNS_STRATEGY_INDEX
         val selectedStrategy = strategyValues[safeStratPos].toInt()
 
         prefs.edit()
-            // свитчеры уже сохраняются немедленно, но дублирующая запись не мешает
             .putBoolean("PROXY_ONLY", swProxyOnly.isChecked)
             .putString("BIND_ADDRESS", etBindAddress.text.toString())
             .putString("FAKE_SNI", etFakeSni.text.toString())
@@ -410,10 +436,11 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .putString("BOOTSTRAP_DNS", etBootstrapDns.text.toString())
             .putBoolean("SOCKS_MODE", swSocksMode.isChecked)
             .putInt("VERBOSITY", selectedVerbosity)
-			.putInt("TUN2PROXY_DNS_STRATEGY", selectedStrategy)
+            .putInt("TUN2PROXY_DNS_STRATEGY", selectedStrategy)
             .putString("TEST_URL", etTestUrl.text.toString())
             .putBoolean("MANUAL_CMD_MODE", swManualMode.isChecked)
             .putString("CUSTOM_CMD_STRING", etCmdPreview.text.toString())
+			.putBoolean(PREF_FORCE_INVERT_APPS, prefs.getBoolean(PREF_FORCE_INVERT_APPS, false))
             .apply()
     }
 
@@ -426,7 +453,7 @@ class AdvancedSettingsActivity : AppCompatActivity() {
         swSocksMode.isChecked = false
         etTestUrl.setText(DEFAULT_TEST_URL)
         spVerbosity.setSelection(DEFAULT_VERBOSITY_INDEX)
-		spDnsStrategy.setSelection(DEFAULT_DNS_STRATEGY_INDEX)
+        spDnsStrategy.setSelection(DEFAULT_DNS_STRATEGY_INDEX)
         swManualMode.isChecked = false
         etCmdPreview.setText("")
         etCmdPreview.isEnabled = false
@@ -439,12 +466,15 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .putString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP)
             .putBoolean("SOCKS_MODE", false)
             .putInt("VERBOSITY", 20)
-			.putInt("TUN2PROXY_DNS_STRATEGY", 1)
+            .putInt("TUN2PROXY_DNS_STRATEGY", 1)
             .putString("TEST_URL", DEFAULT_TEST_URL)
             .putBoolean("MANUAL_CMD_MODE", false)
             .putString("CUSTOM_CMD_STRING", "")
+            .putBoolean(PREF_FORCE_INVERT_APPS, false)
+			.remove("APPS")
             .apply()
 
+        updateInvertButtonText()
         updateCmdPreview()
     }
 }

@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity() {
             intent?.getStringExtra("log")?.let { rawMessage ->
                 val timestamp = timeFormatter.format(Date())
                 val formattedLog = "[$timestamp] $rawMessage\n"
-
                 val view = svLog.getChildAt(0)
                 val diff = if (view != null) (view.bottom - (svLog.height + svLog.scrollY)) else 0
                 val wasAtBottom = diff <= 100
@@ -256,6 +255,8 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("TEST_URL", prefs.getString("TEST_URL", ""))
         intent.putExtra("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
         intent.putExtra("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))
+        // форсируем инверсию режима (whitelist через DISALLOWED)
+        intent.putExtra("FORCE_INVERT_APP_LIST", prefs.getBoolean("FORCE_INVERT_APP_LIST", false))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
     }
@@ -267,7 +268,7 @@ class MainActivity : AppCompatActivity() {
 
         val verbosity = prefs.getInt("VERBOSITY", 20)
         if (verbosity == 10) {
-            tvLog.append("[INFO] Service stop requested.\n")
+            tvLog.append("[INFO] MainActivity Service stop requested.\n")
         }
     }
 

@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import androidx.annotation.Keep
 import androidx.core.app.NotificationCompat
 import java.io.BufferedReader
 import java.io.File
@@ -27,6 +28,9 @@ class ProxyVpnService : VpnService() {
     private var currentCountry = "EU"
     private var tunDnsServer = "8.8.8.8"
     private var allowedApps: ArrayList<String>? = null
+
+    // НОВОЕ: форсим whitelist через DISALLOWED (инверсия)
+    private var forceInvertAppList = false
 
     @Volatile
     private var stopRequested = false
@@ -49,14 +53,10 @@ class ProxyVpnService : VpnService() {
     private var manualCmdMode = false
     private var customCmdString = ""
 
-    // prefs-хелперы (оставляем для настроек; для RUNNING используем ServiceState)
     private fun prefs() = getSharedPreferences("OperaProxyPrefs", Context.MODE_PRIVATE)
 
     private fun setServiceRunning(value: Boolean) {
-        // Источник правды для multi-process
         ServiceState.setRunning(this, value)
-
-        // для обратной совместимости (UI/Tile на это больше не полагаются)
         prefs().edit().putBoolean("SERVICE_RUNNING", value).apply()
     }
 
@@ -84,6 +84,51 @@ class ProxyVpnService : VpnService() {
             System.loadLibrary("native-lib")
         }
     }
+
+	private data class HostPort(val host: String, val port: Int)
+
+	private fun parseHostPortLoose(s: String): HostPort? {
+		val t = s.trim()
+		if (t.isEmpty()) return null
+
+		runCatching {
+			val uri = android.net.Uri.parse(t)
+			val h = uri.host
+			val p = uri.port
+			if (!h.isNullOrBlank() && p > 0) return HostPort(h.lowercase(), p)
+		}
+	
+		val m = Regex("""^([^:]+):(\d{1,5})$""").matchEntire(t) ?: return null
+		val host = m.groupValues[1].lowercase()
+		val port = m.groupValues[2].toIntOrNull() ?: return null
+		if (port !in 1..65535) return null
+		return HostPort(host, port)
+	}
+
+	private fun isSelfUpstreamLoop(bind: String, upstream: String): Boolean {
+		val b = parseHostPortLoose(bind) ?: return false
+		val u = parseHostPortLoose(upstream) ?: return false
+
+		val uHost = when (u.host) {
+			"localhost" -> "127.0.0.1"
+			else -> u.host
+		}
+		val bHost = when (b.host) {
+			"localhost" -> "127.0.0.1"
+			else -> b.host
+		}
+
+		return (u.port == b.port) && (uHost == bHost)
+	}
+
+	private fun failFastAndStop(msg: String): Int {
+		logToUI("[CONFIG ERROR] $msg", fromBinary = false)
+		setServiceRunning(false)
+		notifyStatusChange()
+		stopSelf()
+		return START_NOT_STICKY
+	}
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
@@ -119,15 +164,17 @@ class ProxyVpnService : VpnService() {
             manualCmdMode = intent.getBooleanExtra("MANUAL_CMD_MODE", false)
             customCmdString = intent.getStringExtra("CUSTOM_CMD_STRING") ?: ""
             tunDnsStrategy = intent.getIntExtra("TUN2PROXY_DNS_STRATEGY", 1)
+            forceInvertAppList = intent.getBooleanExtra("FORCE_INVERT_APP_LIST", false)
 
             if (manualCmdMode) {
-                logDebug("[CONFIG] ВКЛЮЧЕН РУЧНОЙ РЕЖИМ КОМАНДЫ")
-                logDebug("[CONFIG] CUSTOM CMD: $customCmdString")
+                logDebug("[CONFIG] ВКЛЮЧЕН РУЧНОЙ РЕЖИМ КОМАНДЫ\n")
+                logDebug("[CONFIG] CUSTOM CMD: $customCmdString\n")
             }
 
             logToUI("[CONFIG] Страна: $currentCountry")
             logToUI("[CONFIG] VPN DNS: $tunDnsServer")
             logToUI("[CONFIG] Apps count: ${allowedApps?.size ?: 0}")
+            logToUI("[CONFIG] Force invert apps: $forceInvertAppList\n")
 
             if (verbosity <= 10) {
                 logToUI("=== РАСШИРЕННЫЕ НАСТРОЙКИ ===")
@@ -139,8 +186,28 @@ class ProxyVpnService : VpnService() {
                 logToUI("[ADV] TEST URL: $testUrl")
                 logToUI("[ADV] TUN DNS STRATEGY: $tunDnsStrategy (0=Virt, 1=TCP, 2=Direct)")
                 logToUI("[ADV] VERBOSITY: $verbosity")
+                logToUI("[ADV] FORCE INVERT APPS: $forceInvertAppList\n")
             }
+			
         }
+		
+		// self-loop по upstream proxy
+		if (upstreamProxy.isNotBlank() && isSelfUpstreamLoop(bindAddress, upstreamProxy)) {
+			return failFastAndStop("Upstream Proxy указывает на тот же адрес/порт что и Bind Address ($bindAddress). Это создаёт петлю.\n")
+		}
+
+		if (manualCmdMode && customCmdString.isNotBlank()) {
+			val tokens = customCmdString.trim().split(Regex("\\s+"))
+			fun argValue(key: String): String? {
+				val i = tokens.indexOf(key)
+				return if (i >= 0 && i + 1 < tokens.size) tokens[i + 1] else null
+			}
+			val bindArg = argValue("-bind-address") ?: bindAddress
+			val proxyArg = argValue("-proxy")
+			if (!proxyArg.isNullOrBlank() && isSelfUpstreamLoop(bindArg, proxyArg)) {
+				return failFastAndStop("В ручной команде -proxy указывает на -bind-address ($bindArg). Это петля.\n")
+			}
+		}
 
         startForegroundNotification()
 
@@ -180,6 +247,7 @@ class ProxyVpnService : VpnService() {
         while (retries < maxRetries && isServiceRunning() && !stopRequested) {
             try {
                 Socket().use { socket ->
+                    try { protect(socket) } catch (_: Exception) {}
                     socket.connect(InetSocketAddress(host, port), 200)
                     isConnected = true
                 }
@@ -203,8 +271,9 @@ class ProxyVpnService : VpnService() {
             establishVpn()
         } else {
             if (isServiceRunning() && !stopRequested) {
-                logToUI("[ERROR] Не удалось дождаться запуска локального прокси. VPN не создан.", fromBinary = false)
+                logToUI("[ERROR] Не удалось дождаться запуска локального прокси. VPN не создан.\n", fromBinary = false)
                 stopProxyServiceSelf()
+                stopVpn()
             }
         }
     }
@@ -218,7 +287,7 @@ class ProxyVpnService : VpnService() {
                 Pair("127.0.0.1", 1080)
             }
         } catch (_: Exception) {
-            Pair("127.0.0.1", 1080)
+            Pair("127.0.0.1", 60123)
         }
     }
 
@@ -233,7 +302,7 @@ class ProxyVpnService : VpnService() {
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
 
     private fun startForegroundNotification() {
-        val channelId = "opera_vpn_channel"
+        val channelId = "OperaProxy_vpn_channel"
         val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -280,166 +349,205 @@ class ProxyVpnService : VpnService() {
         }
     }
 
-	private fun establishVpn() {
-		if (proxyOnlyMode || stopRequested) return
+    private fun establishVpn() {
+        if (proxyOnlyMode || stopRequested) return
 
-		try {
-			logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
+        try {
+            logToUI("[BUILDER] Настройка Builder...", fromBinary = false)
 
-			// пробуем allowed-list (белый список)
-			var builder = buildBaseVpnBuilder()
-			builder = applyAppRoutingWithFallback(builder)
+            var builder = buildBaseVpnBuilder()
+            builder = applyAppRoutingWithFallback(builder)
 
-			builder.addRoute("0.0.0.0", 0)
+            builder.addRoute("0.0.0.0", 0)
 
-			vpnInterface = builder.establish()
-			if (vpnInterface == null) {
-				logToUI("[CRITICAL] Не удалось создать VPN-интерфейс. Нужно заново выдать разрешение.")
-				stopVpn()
-				return
-			}
+            vpnInterface = builder.establish()
+            if (vpnInterface == null) {
+                logToUI("[CRITICAL] Не удалось создать VPN-интерфейс. Нужно заново выдать разрешение.\n")
+                stopVpn()
+                return
+            }
 
-			tunFd = vpnInterface!!.fd
-			if (verbosity <= 10) {
-				logToUI("[VPN] TUN fd = $tunFd", fromBinary = false)
-			}
+            tunFd = vpnInterface!!.detachFd()
+            if (verbosity <= 10) {
+                logToUI("[VPN] TUN detachFd = $tunFd", fromBinary = false)
+            }
 
-			startTun2proxyWorker()
-			if (verbosity <= 10) {
-				logToUI("[TUN2PROXY] Запущен обработчик TUN - proxy", fromBinary = false)
-			}
-		} catch (e: Exception) {
-			logToUI("[CRITICAL] Ошибка VPN: ${e.javaClass.simpleName}: ${e.message}")
-			stopVpn()
-		}
-	}
-	
-	private fun buildBaseVpnBuilder(): Builder {
-		val builder = Builder()
-		builder.setSession("OperaProxy")
-		builder.setMtu(1420)
-		builder.addAddress("10.1.10.1", 24)
+            startTun2proxyWorker()
+            if (verbosity <= 10) {
+                logToUI("[tun2proxy] Запущен обработчик TUN - proxy", fromBinary = false)
+            }
+        } catch (e: Exception) {
+            logToUI("[CRITICAL] Ошибка VPN: ${e.javaClass.simpleName}: ${e.message}\n")
+            stopVpn()
+        }
+    }
 
-		try {
-			builder.addDnsServer(tunDnsServer)
-		} catch (_: Exception) {
-			builder.addDnsServer("8.8.8.8")
-		}
+    private fun buildBaseVpnBuilder(): Builder {
+        val builder = Builder()
+        builder.setSession("com.example.operaproxy")
+        builder.setMtu(1420)
+        builder.addAddress("10.1.10.1", 24)
 
-		return builder
-	}
+        try {
+            builder.addDnsServer(tunDnsServer)
+        } catch (e: Exception) {
+            logToUI("[CRITICAL] Ошибка VPN builder: ${e.javaClass.simpleName}: ${e.message}\n")
+            stopVpn()
+        }
 
-	/**
-	 * Если ловим IllegalStateException("Cannot add both allowed and disallowed applications")
-	 * или IllegalArgumentException - не смешиваем режимы на одном Builder.
-	 * Пересоздаём Builder и строим whitelist через addDisallowedApplication (инверсия списка выбранных).
-	 */
-	private fun applyAppRoutingWithFallback(builderIn: Builder): Builder {
-		val selected = (allowedApps ?: arrayListOf()).toSet()
-		val safeSelected = selected.filter { it.isNotBlank() && it != packageName }.toSet()
+        return builder
+    }
 
-		// Если ничего не выбрано - просто исключаем приложение чтобы не ловить петлю
-		if (safeSelected.isEmpty()) {
-			try {
-				builderIn.addDisallowedApplication(packageName)
-			} catch (_: Exception) {}
-			return builderIn
-		}
+    private fun applyAppRoutingWithFallback(builderIn: Builder): Builder {
+        val selected = (allowedApps ?: arrayListOf()).toSet()
+        val safeSelected = selected.filter { it.isNotBlank() && it != packageName }.toSet()
 
-		// Пытаемся сделать белый список через addAllowedApplication
-		try {
-			logToUI("[ROUTING] Пробуем режим: ALLOWED (white list) (${safeSelected.size})")
-			for (pkg in safeSelected) {
-				try {
-					builderIn.addAllowedApplication(pkg)
-				} catch (iae: IllegalArgumentException) {
-					// пропускаем, но не переключаем режим из-за одного пакета.
-					logToUI("[ROUTING] Пропускаем приложение (IAE): $pkg", fromBinary = false)
+        // Если ничего не выбрано - просто исключаем приложение чтобы не ловить петлю
+        if (safeSelected.isEmpty()) {
+            try {
+                builderIn.addDisallowedApplication(packageName)
+            } catch (e: Exception) {
+                logToUI("[CRITICAL] Ошибка: ${e.javaClass.simpleName}: ${e.message}\n")
+                stopVpn()
+            }
+            return builderIn
+        }
+
+        // принудительно строим whitelist через DISALLOWED (инверсия)
+        if (forceInvertAppList) {
+            logToUI("[ROUTING] Ручной режим: DISALLOWED whitelist\n")
+
+            val builder = buildBaseVpnBuilder()
+
+            try {
+                builder.addDisallowedApplication(packageName)
+            } catch (e: Exception) {
+                logToUI("[ROUTING] Не получилось исключить OperaProxy: ${e.javaClass.simpleName}: ${e.message}\n", fromBinary = false)
+                return builder
+            }
+
+            val disallowPkgs = getLaunchablePackagesMinus(safeSelected)
+            val maxDisallowed = 900
+            if (disallowPkgs.size > maxDisallowed) {
+                logToUI("[ROUTING] Слишком много пакетов для DISALLOWED (${disallowPkgs.size}). Отключаем фильтрацию приложений, проксируем все.")
+                try { builder.addDisallowedApplication(packageName) } catch (_: Exception) {}
+                return builder
+            }
+
+            for (pkg in disallowPkgs) {
+                try {
+                    builder.addDisallowedApplication(pkg)
+                } catch (e: Exception) {
+                    if (verbosity <= 10) {
+                        logToUI("[ROUTING] Пропускаем приложение: $pkg (${e.javaClass.simpleName})\n", fromBinary = false)
+                    }
+                }
+            }
+            return builder
+        }
+
+        // Пытаемся сделать белый список через addAllowedApplication
+        try {
+            logToUI("[ROUTING] ALLOWED (white list) (${safeSelected.size})")
+
+            var added = 0
+            for (pkg in safeSelected) {
+                try {
+                    builderIn.addAllowedApplication(pkg)
+                    added++
+                } catch (iae: IllegalArgumentException) {
+                    logToUI("[ROUTING] Пропускаем приложение (IAE): $pkg", fromBinary = false)
+                } catch (uoe: UnsupportedOperationException) {
+					logToUI("[ROUTING] addAllowedApplication не поддерживается (UOE). Переключаемся на DISALLOWED whitelist.\n", fromBinary = false)
+					throw uoe
 				}
-			}
-			return builderIn
-		} catch (ise: IllegalStateException) {
-			val msg = ise.message ?: ""
-			if (!msg.contains("Cannot add both allowed and disallowed applications")) {
-				throw ise
-			}
-			logToUI("[ROUTING] VPN ALLOWED-mode сломан в прошивке: $msg")
-		} catch (iae: IllegalArgumentException) {
-			logToUI("[ROUTING] ALLOWED-mode IAE: ${iae.message}", fromBinary = false)
-		}
+            }
 
-		// Fallback: белый список через DISALLOWED (инверсия)
-		val builder = buildBaseVpnBuilder()
-		
-		// сначала исключаем operaproxy
-		try {
-			builder.addDisallowedApplication(packageName)
-		} catch (e: Exception) {
-			logToUI("[ROUTING] Не получилось сиключить OperaProxy: ${e.javaClass.simpleName}: ${e.message}", fromBinary = false)
-			return builder
-		}
+            if (added == 0) {
+                val b = buildBaseVpnBuilder()
+                try { b.addDisallowedApplication(packageName) } catch (_: Exception) {}
+                return b
+            }
 
-		logToUI("[ROUTING] Fallback режим: DISALLOWED whitelist (инверсия списка выбранных)")
+            return builderIn
+		} catch (uoe: UnsupportedOperationException) {
+        } catch (ise: IllegalStateException) {
+            val msg = ise.message ?: ""
+            if (!msg.contains("Cannot add both allowed and disallowed applications")) throw ise
+            logToUI("[ROUTING] VPN ALLOWED-mode сломан в прошивке: $msg \n")
+        } catch (iae: IllegalArgumentException) {
+            logToUI("[ROUTING] ALLOWED-mode IAE: ${iae.message}\n", fromBinary = false)
+        }
 
-		// Собираем пакеты, которые будем исключать (все launchable, кроме выбранных).
-		val disallowPkgs = getLaunchablePackagesMinus(safeSelected)
+        // Fallback: белый список через DISALLOWED (инверсия)
+        val builder = buildBaseVpnBuilder()
 
-		// Если список слишком большой - лучше уйти в системный VPN без фильтрации приложений
-		val maxDisallowed = 900
-		if (disallowPkgs.size > maxDisallowed) {
-			logToUI("[ROUTING] Слишком много пакетов для DISALLOWED (${disallowPkgs.size}). Отключаем фильтрацию приложений.")
-			try { builder.addDisallowedApplication(packageName) } catch (_: Exception) {}
-			return builder
-		}
+        try {
+            builder.addDisallowedApplication(packageName)
+        } catch (e: Exception) {
+            logToUI("[ROUTING] Не получилось исключить OperaProxy: ${e.javaClass.simpleName}: ${e.message}\n", fromBinary = false)
+            return builder
+        }
 
-		for (pkg in disallowPkgs) {
-			try {
-				builder.addDisallowedApplication(pkg)
-			} catch (e: Exception) {
-				// IAE/NameNotFound/ISE на отдельных приложениях - пропускаем.
-				if (verbosity <= 10) {
-					logToUI("[ROUTING] Пропускаем приложение: $pkg (${e.javaClass.simpleName})", fromBinary = false)
-				}
-			}
-		}
-		return builder
-	}
+        logToUI("[ROUTING] Fallback режим: DISALLOWED whitelist\n")
 
-	private fun getLaunchablePackagesMinus(keep: Set<String>): Set<String> {
-		return try {
-			val pm = packageManager
-			val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null).apply {
-				addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-			}
-			val resolved = pm.queryIntentActivities(intent, 0)
-			val pkgs = HashSet<String>(resolved.size)
-			for (ri in resolved) {
-				val pkg = ri.activityInfo?.packageName ?: continue
-				if (pkg.isBlank()) continue
-				if (keep.contains(pkg)) continue
-				pkgs.add(pkg)
-			}
-			pkgs
-		} catch (_: Exception) {
-			emptySet()
-		}
-	}
+        val disallowPkgs = getLaunchablePackagesMinus(safeSelected)
 
+        val maxDisallowed = 900
+        if (disallowPkgs.size > maxDisallowed) {
+            logToUI("[ROUTING] Слишком много пакетов для DISALLOWED (${disallowPkgs.size}). Отключаем фильтрацию приложений, проксируем все.\n")
+            try { builder.addDisallowedApplication(packageName) } catch (_: Exception) {}
+            return builder
+        }
+
+        for (pkg in disallowPkgs) {
+            try {
+                builder.addDisallowedApplication(pkg)
+            } catch (e: Exception) {
+                if (verbosity <= 10) {
+                    logToUI("[ROUTING] Пропускаем приложение: $pkg (${e.javaClass.simpleName})\n", fromBinary = false)
+                }
+            }
+        }
+        return builder
+    }
+
+    private fun getLaunchablePackagesMinus(keep: Set<String>): Set<String> {
+        return try {
+            val pm = packageManager
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null).apply {
+                addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            }
+            val resolved = pm.queryIntentActivities(intent, 0)
+            val pkgs = HashSet<String>(resolved.size)
+            for (ri in resolved) {
+                val pkg = ri.activityInfo?.packageName ?: continue
+                if (pkg.isBlank()) continue
+                if (keep.contains(pkg)) continue
+                pkgs.add(pkg)
+            }
+            pkgs
+        } catch (_: Exception) {
+            emptySet()
+        }
+    }
+
+    @Keep
     fun onTun2ProxyLog(message: String) {
         if (verbosity == 5 || verbosity <= 10) {
-            logToUI("[tun2proxy] $message", fromBinary = false)
+            logToUI(message, fromBinary = false)
         }
     }
 
     private fun startTun2proxyWorker() {
         if (tunFd <= 0) {
-            logToUI("[TUN2PROXY] Некорректный tunFd: $tunFd", fromBinary = false)
+            logToUI("[tun2proxy] Некорректный tunFd: $tunFd \n", fromBinary = false)
             return
         }
 
         if (tun2proxyThread != null && tun2proxyThread?.isAlive == true) {
             if (verbosity <= 10) {
-                logToUI("[TUN2PROXY] Повторный запуск заблокирован: поток уже работает", fromBinary = false)
+                logToUI("[tun2proxy] Повторный запуск заблокирован: поток уже работает \n", fromBinary = false)
             }
             return
         }
@@ -469,24 +577,24 @@ class ProxyVpnService : VpnService() {
         tun2proxyThread = Thread {
             try {
                 if (verbosity <= 10) {
-                    logToUI("[TUN2PROXY] startTun2proxy($proxyUrl, fd=$tunFd, dns=$dnsStrategy)", fromBinary = false)
+                    logToUI("[tun2proxy] startTun2proxy($proxyUrl, fd=$tunFd, dns=$dnsStrategy)", fromBinary = false)
                 }
 
                 val code = startTun2proxy(
                     this,
                     proxyUrl,
                     tunFd,
-                    false,
+                    true,
                     mtuChar,
                     dnsStrategy,
                     t2pVerbosity
                 )
 
                 if (verbosity <= 10) {
-                    logToUI("[TUN2PROXY] Завершён с кодом $code", fromBinary = false)
+                    logToUI("[tun2proxy] Завершён с кодом $code", fromBinary = false)
                 }
             } catch (e: Throwable) {
-                logToUI("[TUN2PROXY ERROR] ${e.message}")
+                logToUI("[tun2proxy ERROR] ${e.message} \n")
             } finally {
                 if (Thread.currentThread() == tun2proxyThread) {
                     tun2proxyThread = null
@@ -502,11 +610,11 @@ class ProxyVpnService : VpnService() {
             val binaryPath = File(nativeLibDir, binaryName)
 
             if (!binaryPath.exists()) {
-                logToUI("[ERROR] Бинарный файл не найден: ${binaryPath.absolutePath}")
+                logToUI("[ERROR] Бинарный файл не найден: ${binaryPath.absolutePath} \n")
             }
 
             if (verbosity <= 10) {
-                logToUI("[BIN] Поиск бинарника: ${binaryPath.absolutePath}", fromBinary = false)
+                logToUI("[BIN] Поиск бинарника: ${binaryPath.absolutePath} \n", fromBinary = false)
             }
 
             val sslFile = File(filesDir, "cacert.pem")
@@ -517,7 +625,7 @@ class ProxyVpnService : VpnService() {
                         FileOutputStream(sslFile).use { o -> input.copyTo(o) }
                     }
                 } catch (e: Exception) {
-                    logToUI("[ERROR] Ошибка копирования сертификата: ${e.message}")
+                    logToUI("[ERROR] Ошибка копирования сертификата: ${e.message} \n")
                 }
             }
 
@@ -550,7 +658,7 @@ class ProxyVpnService : VpnService() {
 
             logToUI("[CMD] Запуск бинарного файла...", fromBinary = false)
             if (verbosity <= 10) {
-                logToUI("CMD: ${args.joinToString(" ")}", fromBinary = false)
+                logToUI("CMD: ${args.joinToString(" ")} \n", fromBinary = false)
             }
 
             val pb = ProcessBuilder(args)
@@ -566,13 +674,13 @@ class ProxyVpnService : VpnService() {
             }
 
             process!!.waitFor()
-            logToUI("[PROCESS] Exit code: ${process?.exitValue()}")
+            logToUI("[PROCESS] Exit code: ${process?.exitValue()} \n")
         } catch (e: Exception) {
             val msg = e.message ?: ""
             if (stopRequested && (msg.contains("read interrupted") || msg.contains("Socket is closed"))) {
                 logToUI("[INFO] Бинарник остановлен.", fromBinary = false)
             } else {
-                logToUI("[CRITICAL BIN ERROR] $msg", fromBinary = false)
+                logToUI("[CRITICAL BIN ERROR] $msg \n", fromBinary = false)
             }
         } finally {
             if (!stopRequested) {
@@ -628,24 +736,34 @@ class ProxyVpnService : VpnService() {
         stopRequested = true
 
         try {
-            try { vpnInterface?.close() } catch (_: Exception) {}
-            vpnInterface = null
-            tunFd = -1
-
             try {
                 logToUI("[STOP] Отправка сигнала tun2proxy_stop...", fromBinary = false)
                 stopTun2proxy()
             } catch (e: Exception) {
-                logToUI("[STOP] Ошибка вызова stopTun2proxy: ${e.message}")
+                logToUI("[STOP] Ошибка вызова stopTun2proxy: ${e.message} \n")
             }
 
             try {
-                tun2proxyThread?.join(2200)
-            } catch (_: Exception) {
-                logToUI("[STOP] Поток tun2proxy не завершился вовремя")
+                val t = tun2proxyThread
+                if (t != null) {
+                    val deadline = System.currentTimeMillis() + 3000L
+                    while (t.isAlive && System.currentTimeMillis() < deadline) {
+                        try { t.join(200) } catch (_: Exception) {}
+                    }
+                    if (t.isAlive) {
+                        logToUI("[STOP] Поток tun2proxy все еще жив после таймаута", fromBinary = false)
+                        t.interrupt()
+                    } else {
+                        tun2proxyThread = null
+                    }
+                }
+            } catch (e: Exception) {
+                logToUI("[STOP] Ошибка ожидания потока tun2proxy: ${e.message} \n", fromBinary = false)
             }
-            if (tun2proxyThread?.isAlive == true) tun2proxyThread?.interrupt()
-            tun2proxyThread = null
+
+            try { vpnInterface?.close() } catch (_: Exception) {}
+            vpnInterface = null
+            tunFd = -1
 
             process?.destroy()
             process = null
@@ -665,6 +783,12 @@ class ProxyVpnService : VpnService() {
         } catch (e: Exception) {
             logToUI("[STOP ERROR] ${e.message}")
         }
+    }
+
+    override fun onRevoke() {
+        stopVpn()
+        stopSelf()
+        super.onRevoke()
     }
 
     override fun onDestroy() {

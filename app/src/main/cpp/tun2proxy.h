@@ -31,14 +31,6 @@ typedef struct Tun2proxyTrafficStatus {
   uint64_t rx;
 } Tun2proxyTrafficStatus;
 
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

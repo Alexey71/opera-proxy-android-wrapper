@@ -103,6 +103,7 @@ class ProxyTileService : TileService() {
         intent.putExtra("TEST_URL", prefs.getString("TEST_URL", ""))
         intent.putExtra("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
         intent.putExtra("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))
+		intent.putExtra("FORCE_INVERT_APP_LIST", prefs.getBoolean("FORCE_INVERT_APP_LIST", false))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)

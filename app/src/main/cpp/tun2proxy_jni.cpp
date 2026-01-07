@@ -173,8 +173,8 @@ static void tun2proxy_log_callback(Tun2proxyVerbosity level, const char* msg, vo
         case Tun2proxyVerbosity_Error: android_prio = ANDROID_LOG_ERROR; break;
         case Tun2proxyVerbosity_Warn:  android_prio = ANDROID_LOG_WARN;  break;
         case Tun2proxyVerbosity_Info:  android_prio = ANDROID_LOG_INFO;  break;
-		case Tun2proxyVerbosity_Debug:  android_prio = ANDROID_LOG_DEBUG;  break;
-		case Tun2proxyVerbosity_Trace:  android_prio = ANDROID_LOG_VERBOSE;  break;
+        case Tun2proxyVerbosity_Debug:  android_prio = ANDROID_LOG_DEBUG;  break;
+        case Tun2proxyVerbosity_Trace:  android_prio = ANDROID_LOG_VERBOSE;  break;
         default: break;
     }
     __android_log_print(android_prio, LOG_TAG, "%s", msg ? msg : "");

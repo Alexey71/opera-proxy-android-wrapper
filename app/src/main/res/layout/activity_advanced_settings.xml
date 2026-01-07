@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -44,15 +45,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/swProxyOnly"
-                android:text="@string/pref_proxy_only"
-                android:textColor="@color/text_primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:paddingEnd="4dp" />
-
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBindAddress"
                 android:layout_width="match_parent"
@@ -64,12 +56,14 @@
                 app:endIconMode="custom"
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
+                app:expandedHintEnabled="false"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etBindAddress"
                     android:inputType="text"
+                    android:hint="@string/pref_bind_address_hint"
                     android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
@@ -77,12 +71,21 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/swProxyOnly"
+                android:text="@string/pref_proxy_only"
+                android:textColor="@color/text_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:paddingEnd="4dp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/swSocksMode"
                 android:text="@string/pref_socks_mode"
                 android:textColor="@color/text_primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="8dp"
                 android:paddingEnd="4dp" />
 
             <!-- Группа: Трафик -->
@@ -106,12 +109,14 @@
                 app:endIconMode="custom"
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
+                app:expandedHintEnabled="false"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etFakeSni"
                     android:inputType="textUri"
+                    android:hint="@string/pref_fake_sni_hint"
                     android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
@@ -129,12 +134,14 @@
                 app:endIconMode="custom"
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
+                app:expandedHintEnabled="false"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="10dp">
+                android:layout_marginBottom="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUpstreamProxy"
                     android:inputType="textUri"
+                    android:hint="@string/pref_upstream_proxy_hint"
                     android:imeOptions="actionNext"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
@@ -162,6 +169,7 @@
                 app:endIconMode="custom"
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
+                app:expandedHintEnabled="false"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="8dp">
 
@@ -170,6 +178,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
+                    android:hint="@string/pref_bootstrap_dns_hint"
                     android:textColor="@color/text_primary"
                     android:singleLine="true"
                     android:ellipsize="end"
@@ -190,12 +199,14 @@
                 app:endIconMode="custom"
                 app:endIconDrawable="@android:drawable/ic_menu_help"
                 app:endIconTint="@color/text_secondary"
+                app:expandedHintEnabled="false"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="10dp">
+                android:layout_marginBottom="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etTestUrl"
                     android:inputType="textUri"
+                    android:hint="@string/pref_test_url_hint"
                     android:textColor="@color/text_primary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
@@ -212,7 +223,7 @@
                 android:paddingEnd="8dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:layout_marginBottom="10dp">
+                android:layout_marginBottom="8dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -238,9 +249,9 @@
                 <Spinner
                     android:id="@+id/spDnsStrategy"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
+                    android:layout_height="46dp"
                     android:minWidth="130dp"
-                    android:spinnerMode="dropdown"/>
+                    android:spinnerMode="dropdown" />
 
                 <ImageView
                     android:id="@+id/ivHelpDnsStrategy"
@@ -251,8 +262,43 @@
                     android:layout_marginStart="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"/>
+                    android:background="?attr/selectableItemBackgroundBorderless" />
             </LinearLayout>
+
+           <!-- API ADDRESS -->
+            <TextView
+                android:text="В случае ошибок при подключении к серверам"
+                android:textColor="@color/opera_red"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputLayout
+
+                android:id="@+id/tilApiAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/pref_api_address"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/opera_red"
+                app:boxStrokeColor="@color/opera_red"
+                app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_sort_by_size"
+                app:endIconTint="@color/opera_red"
+                app:expandedHintEnabled="false"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etApiAddress"
+                    android:inputType="textUri"
+                    android:hint="@string/pref_api_address_hint"
+                    android:imeOptions="actionNext"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Группа: Логи -->
             <TextView
@@ -274,7 +320,7 @@
                 android:paddingEnd="8dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="8dp">
 
                 <TextView
                     android:text="@string/pref_verbosity"
@@ -289,17 +335,6 @@
                     android:layout_height="40dp"
                     android:minWidth="120dp" />
             </LinearLayout>
-
-            <!-- НОВАЯ КНОПКА: принудительная инверсия списка приложений -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnInvertAppList"
-                android:text="Инверсия списка приложений"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:textColor="@color/text_primary"
-                app:strokeColor="@color/text_secondary"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginBottom="12dp" />
 
             <!-- КОМАНДНАЯ СТРОКА -->
             <TextView
@@ -329,7 +364,7 @@
                 app:hintTextColor="@color/opera_red"
                 app:boxStrokeColor="@color/opera_red"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="10dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etCmdPreview"
@@ -385,14 +420,14 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="22dp">
 
                 <ImageView
                     android:src="@drawable/ic_github"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:layout_marginEnd="16dp"
-                    app:tint="@color/text_primary"/>
+                    app:tint="@color/text_primary" />
 
                 <TextView
                     android:text="@string/github_link_text"

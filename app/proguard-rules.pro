@@ -7,11 +7,20 @@
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Service
 -keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.service.quicksettings.TileService
+-keep public class * extends android.net.VpnService
 
 # Оставляем нативные методы, если они есть
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# callback из native-lib: ProxyVpnService.onTun2ProxyLog(String)
+-keepclassmembers class com.example.operaproxy.ProxyVpnService {
+    public void onTun2ProxyLog(java.lang.String);
+}
+
+-dontoptimize
 
 # Мне прятать нечего
 -dontobfuscate

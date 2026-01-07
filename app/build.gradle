@@ -7,19 +7,20 @@ android {
     compileSdk 34
     buildFeatures {
         buildConfig = true
+        viewBinding = true
     }
     defaultConfig {
         applicationId "com.example.operaproxy"
         minSdk 21
         targetSdk 34
-        versionCode 29
-        versionName "3.0.7"
-		
+        versionCode 30
+        versionName "3.0.8"
+        
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
         }
     }
-	
+    
     splits {
         abi {
             enable true
@@ -28,15 +29,16 @@ android {
             universalApk true
         }
     }
-	
+    
     buildTypes {
         release {
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-		debug {
+        debug {
             minifyEnabled false
+            shrinkResources false
         }
     }
     compileOptions {
@@ -51,12 +53,27 @@ android {
             useLegacyPackaging = true
         }
     }
-	externalNativeBuild {
+    externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def abi = null
+            try {
+                abi = output.getFilter(com.android.build.OutputFile.ABI)
+            } catch (Throwable ignored) {}
+
+            def arch = (abi != null) ? abi : "universal"
+            def vName = variant.versionName
+
+            outputFileName = "OperaProxy-${vName}-${arch}.apk"
+        }
+    }
 }
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'

@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.OperaTurbo" parent="Theme.MaterialComponents.NoActionBar">
+    <style name="Theme.OperaProxy" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimary">@color/opera_red</item>
         <item name="colorPrimaryVariant">@color/opera_red_dark</item>
         <item name="colorOnPrimary">@color/white</item>

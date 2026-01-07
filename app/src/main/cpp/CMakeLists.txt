@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18.1)
 
-project(opera_tun2proxy)
+project(operaproxy_tun2proxy)
 
 add_library(
     native-lib

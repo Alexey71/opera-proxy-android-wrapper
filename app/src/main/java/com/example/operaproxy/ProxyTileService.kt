@@ -84,7 +84,7 @@ class ProxyTileService : TileService() {
         }
         intent.putExtra("COUNTRY", country)
 
-        val dns = prefs.getString("DNS", "8.8.8.8").orEmpty().ifEmpty { "8.8.8.8" }
+        val dns = prefs.getString("DNS", "8.8.8.8").orEmpty().ifEmpty { "9.9.9.9" }
         intent.putExtra("DNS", dns)
 
         val savedApps = prefs.getStringSet("APPS", emptySet()).orEmpty()
@@ -92,7 +92,7 @@ class ProxyTileService : TileService() {
             intent.putStringArrayListExtra("ALLOWED_APPS", ArrayList(savedApps))
         }
 
-        intent.putExtra("BIND_ADDRESS", prefs.getString("BIND_ADDRESS", "127.0.0.1:1080"))
+        intent.putExtra("BIND_ADDRESS", prefs.getString("BIND_ADDRESS", "127.0.0.1:1085"))
         intent.putExtra("FAKE_SNI", prefs.getString("FAKE_SNI", ""))
         intent.putExtra("UPSTREAM_PROXY", prefs.getString("UPSTREAM_PROXY", ""))
         intent.putExtra("BOOTSTRAP_DNS", prefs.getString("BOOTSTRAP_DNS", ""))
@@ -101,9 +101,10 @@ class ProxyTileService : TileService() {
         intent.putExtra("VERBOSITY", prefs.getInt("VERBOSITY", 20))
         intent.putExtra("TUN2PROXY_DNS_STRATEGY", prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1))
         intent.putExtra("TEST_URL", prefs.getString("TEST_URL", ""))
+        intent.putExtra("API_ADDRESS", prefs.getString("API_ADDRESS", ""))
         intent.putExtra("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
         intent.putExtra("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))
-		intent.putExtra("FORCE_INVERT_APP_LIST", prefs.getBoolean("FORCE_INVERT_APP_LIST", false))
+        intent.putExtra("PROXY_APP_MODE", prefs.getInt("PROXY_APP_MODE", 0))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)

@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Proxy Opera Turbo</string>
-	<string name="tile_label">Proxy Opera</string>
+    <string name="app_name">Opera Proxy</string>
+    <string name="tile_label">Opera Proxy</string>
     
     <!-- Основной экран -->
     <string name="region_title">Регион</string>
@@ -10,68 +10,81 @@
     <string name="btn_stop">Остановить прокси</string>
     <string name="logs_title">Лог:</string>
     <string name="app_selector_btn">Выбрать приложения</string>
-    <string name="app_selector_desc">* Если не выбрать приложения, VPN включается для всей системы </string>
+    <string name="app_selector_desc">* Если список пуст, проксируется вся система (кроме режима "Черного списка")</string>
     <string name="dns_hint">DNS Сервер (VPN интерфейс)</string>
-    <string name="notification_channel">Сервис Opera Turbo</string>
-    <string name="notification_title">Opera Turbo Активен</string>
+    <string name="notification_channel">Сервис Opera Proxy</string>
+    <string name="notification_title">Opera Proxy Активен</string>
     <string name="notification_action_stop">ОСТАНОВИТЬ</string>
     <string name="btn_settings_advanced">Расширенные настройки</string>
     <string name="btn_reset_defaults">Сбросить по умолчанию</string>
     <string name="btn_save">Сохранить</string>
+    
+    <!-- Режимы проксирования -->
+    <string name="mode_title">Режим фильтрации приложений:</string>
+    <string name="mode_whitelist">Белый список (Только выбранные)</string>
+    <string name="mode_whitelist_disallowed">Белый список (через Disallowed)</string>
+    <string name="mode_blacklist">Черный список (Все, кроме выбранных)</string>
 
     <!-- Расширенные настройки (Labels & Hints) -->
-    <string name="pref_bind_address">Bind Address</string>
-    <string name="pref_bind_address_hint">127.0.0.1:1080</string>
-    <string name="help_bind_address">Адрес и порт локального интерфейса для прослушивания входящих соединений.</string>
+    <string name="pref_bind_address">Прослушиваемый IP:Порт</string>
+    <string name="pref_bind_address_hint">127.0.0.1:1085</string>
+    <string name="help_bind_address">Адрес и порт локального интерфейса для прослушивания входящих соединений.\nПорт может быть установлен в диапазоне от 1024 до 65535</string>
 
-    <string name="pref_bootstrap_dns">Bootstrap DNS</string>
-    <string name="pref_bootstrap_dns_hint">https://1.1.1.1/dns-query,...</string>
-    <string name="help_bootstrap_dns">Список DoH/DoT резолверов через запятую для инициализации соединения.</string>
+    <string name="pref_bootstrap_dns">DNS для инициализации соединения</string>
+    <string name="pref_bootstrap_dns_hint">Например https://8.8.8.8/dns-query</string>
+    <string name="help_bootstrap_dns">Список DoH/DoT резолверов через запятую для инициализации соединения.\nОн нужен для выбора защищённых DNS-серверов, которые шифруют запросы на разрешение доменов, защищая от перехвата, подмены и слежки провайдерами, маскируя трафик под обычный HTTPS.\nСтроку можно полностью удалить и использовать параметр --api-address для прямого обращения к серверам Opera.</string>
 
-    <string name="pref_fake_sni">Fake SNI</string>
-    <string name="pref_fake_sni_hint">example.com</string>
-    <string name="help_fake_sni">Доменное имя, подставляемое в поле SNI при TLS рукопожатии.</string>
+    <string name="pref_fake_sni">Подмена названия сайта (Fake SNI)</string>
+    <string name="pref_fake_sni_hint">Любой открывающийся сайт</string>
+    <string name="help_fake_sni">Fake SNI маскирует настоящее название сайта в TLS-соединении, чтобы обойти блокировки провайдера или цензуру.\n\nАдрес ЛЮБОГО сайта из "белого списка" провайдера, который работает в мобильной сети/WiFI.\n\nБез www или http:// или https://</string>
 
-    <string name="pref_upstream_proxy">Upstream Proxy</string>
-    <string name="pref_upstream_proxy_hint">socks5://1.2.3.4:1080</string>
-    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик. Поддерживает http/socks5.</string>
+    <string name="pref_upstream_proxy">Промежуточный прокси-сервер (Upstream Proxy)</string>
+    <string name="pref_upstream_proxy_hint">Например socks5://1.2.3.4:1080</string>
+    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик.\nПоддерживает http/socks5.</string>
+
+    <!-- API/IP ADDRESS -->
+    <string name="pref_api_address">API или IP для подключения к серверу</string>
+    <string name="pref_api_address_hint">api.sec-tunnel.com или вручную</string>
+    <string name="help_api_address">Адрес API сервера Opera. Установка этого параметра позволяет подключиться напрямую к указанному серверу.\n\nНажмите на иконку списка справа, чтобы выбрать стандартные сервера.\n\nЛибо в режиме командной строки запустите -country EU -list-proxies что бы узнать IP адресс для прямого подключения.</string>
+    <string name="dialog_clear_bootstrap_title">Очистить DNS Bootstrap?</string>
+    <string name="dialog_clear_bootstrap_msg">Вы установили прямой API/IP адрес.\n\Хотите очистить поле "DNS для инициализации", чтобы соединение шло напрямую без резолвинга через DoH.</string>
 
     <string name="pref_verbosity">Уровень логирования</string>
     <string name="help_verbosity">Детализация логов. 10 - макс. детализация, 50 - только критические ошибки.</string>
 
-    <string name="pref_socks_mode">SOCKS Mode</string>
+    <string name="pref_socks_mode">Режим SOCKS5</string>
     <string name="help_socks_mode">Если включено, локальный порт ожидает SOCKS5 соединения вместо HTTP прокси.</string>
 
-	<string name="pref_proxy_only">Режим «Только Прокси»</string>
-    <string name="help_proxy_only">Запускает только локальный сервер без создания VPN-туннеля. Требует ручной настройки прокси в других приложениях или Wi-Fi.</string>
-	
-	<string name="pref_test_url">Test URL (Benchmark)</string>
-    <string name="pref_test_url_hint">https://ajax.googleapis.com...</string>
-    <string name="help_test_url">URL, используемый для тестирования скорости и выбора самого быстрого сервера.</string>
-	
-	<string name="pref_cmd_args">Аргументы запуска</string>
+    <string name="pref_proxy_only">Режим «Только Прокси»</string>
+    <string name="help_proxy_only">Запускает только локальный сервер без создания VPN-туннеля.\nТребует ручной настройки прокси в других приложениях или Wi-Fi соединении Android с указанием "Прослушиваемого IP:Порта".</string>
+    
+    <string name="pref_test_url">Тестовый URL для выбора быстрого сервера (Benchmark)</string>
+    <string name="pref_test_url_hint">Например https://ajax.googleapis.com/ajax/libs/indefinite-observable/2.0.1/indefinite-observable.bundle.js</string>
+    <string name="help_test_url">URL, используемый для тестирования скорости и выбора самого быстрого сервера, ожидает ответа со статусом 200.</string>
+    
+    <string name="pref_cmd_args">Аргументы запуска</string>
     <string name="pref_manual_mode">Ручное редактирование команды</string>
-    <string name="help_manual_mode">Если включено, сервис использует строку ниже как аргументы запуска (игнорируя другие настройки выше). Пути к бинарнику и сертификату добавляются автоматически.</string>
-	
-	<string name="pref_tun_dns_strategy">Tun2Proxy DNS</string>
-    <string name="help_tun_dns_strategy">Метод обработки DNS-запросов внутри VPN-туннеля:\nVirtual: Fake-IP (быстро, но может ломать некоторые приложения)\nOver TCP: Отправка DNS через TCP прокси (стабильно)\nDirect: Напрямую (игнорируя прокси)</string>
+    <string name="help_manual_mode">Если включено, сервис использует строку ниже как аргументы запуска (игнорируя другие настройки выше).\nПути к бинарнику и сертификату добавляются автоматически.</string>
+    
+    <string name="pref_tun_dns_strategy">Tun2Proxy DNS</string>
+    <string name="help_tun_dns_strategy">Метод обработки DNS-запросов внутри VPN-туннеля:\nVirtual: Fake-IP (быстро, но может ломать некоторые приложения)\nOver TCP: Отправка DNS через TCP прокси (стабильно)</string>
 
     <string-array name="dns_strategy_labels">
         <item>Virtual (Fake-IP)</item>
         <item>Over TCP (Default)</item>
-        <item>Direct</item>
+        <!-- <item>Direct</item>-->
     </string-array>
 
     <string-array name="dns_strategy_values">
         <item>0</item> <!-- Tun2proxyDns_Virtual -->
         <item>1</item> <!-- Tun2proxyDns_OverTcp -->
-        <item>2</item> <!-- Tun2proxyDns_Direct -->
+        <!-- <item>2</item>--> <!-- Tun2proxyDns_Direct -->
     </string-array>
 
     <!-- Ошибки валидации -->
     <string name="err_invalid_format">Неверный формат</string>
     <string name="err_required">Обязательное поле</string>
-	
+    
     <!-- Режимы работы для уведомления -->
     <string name="notification_mode_proxy_http_no_vpn">HTTP-proxy</string>
     <string name="notification_mode_proxy_socks_no_vpn">SOCKS5-proxy</string>
@@ -80,8 +93,8 @@
 
     <!-- Массивы значений -->
     <string-array name="verbosity_levels">
-		<item>Wrapper (App Only)</item>
-        <item>10 (Debug)</item>
+        <item>Логи оболочки и tun2proxy (Wrapper)</item>
+        <item>10 (Debug) Все логи</item>
         <item>20 (Info)</item>
         <item>30 (Warning)</item>
         <item>40 (Error)</item>
@@ -89,15 +102,15 @@
     </string-array>
     
     <string-array name="verbosity_values">
-		<item>5</item>
+        <item>5</item>
         <item>10</item>
         <item>20</item>
         <item>30</item>
         <item>40</item>
         <item>50</item>
     </string-array>
-	
+    
     <string name="about_section">О программе</string>
     <string name="github_link_text">Новые релизы (GitHub SLY-F0X)</string>
-	
+    
 </resources>

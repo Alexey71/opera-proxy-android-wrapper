@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background_app">
-    
-    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" android:background="@color/background_card">
-        <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="?attr/actionBarSize" app:title="@string/app_name" app:titleTextColor="@color/white"/>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/background_app">
+
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:background="@color/background_card">
+        <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar"
+            android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
+            app:title="@string/app_name" app:titleTextColor="@color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" app:layout_behavior="@string/appbar_scrolling_view_behavior">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
-            
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="12dp">
+
             <!-- Карточка региона -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -18,7 +29,7 @@
                 app:cardBackgroundColor="@color/background_card"
                 app:strokeColor="@color/divider"
                 app:strokeWidth="1dp">
-                
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -32,7 +43,7 @@
                         android:textColor="@color/text_primary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"/>
+                        android:layout_marginBottom="8dp" />
 
                     <!-- Регион: горизонтальное расположение -->
                     <RadioGroup
@@ -54,7 +65,7 @@
                             android:paddingStart="4dp"
                             android:paddingEnd="4dp"
                             android:paddingTop="4dp"
-                            android:paddingBottom="4dp"/>
+                            android:paddingBottom="4dp" />
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbAS"
@@ -68,7 +79,7 @@
                             android:paddingStart="4dp"
                             android:paddingEnd="4dp"
                             android:paddingTop="4dp"
-                            android:paddingBottom="4dp"/>
+                            android:paddingBottom="4dp" />
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbAM"
@@ -82,40 +93,112 @@
                             android:paddingStart="4dp"
                             android:paddingEnd="4dp"
                             android:paddingTop="4dp"
-                            android:paddingBottom="4dp"/>
+                            android:paddingBottom="4dp" />
                     </RadioGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Карточка настроек -->
-            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardCornerRadius="16dp" app:cardElevation="4dp" android:layout_marginBottom="20dp" app:cardBackgroundColor="@color/background_card" app:strokeColor="@color/divider" app:strokeWidth="1dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:text="@string/settings_title" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
-                    
-                    <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/dns_hint" app:boxStrokeColor="@color/opera_red" app:hintTextColor="@color/opera_red" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox" android:textColorHint="@color/text_secondary" android:layout_marginBottom="20dp">
-                        <com.google.android.material.textfield.TextInputEditText android:id="@+id/etDns" android:text="8.8.8.8" android:textColor="@color/text_primary" android:inputType="text" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" app:cardCornerRadius="16dp"
+                app:cardElevation="4dp" android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="@color/background_card" app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView android:text="@string/settings_title" android:textSize="18sp"
+                        android:textStyle="bold" android:textColor="@color/text_primary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:hint="@string/dns_hint" app:boxStrokeColor="@color/opera_red"
+                        app:hintTextColor="@color/opera_red"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:textColorHint="@color/text_secondary"
+                        android:layout_marginBottom="20dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDns" android:text="8.8.8.8"
+                            android:textColor="@color/text_primary" android:inputType="text"
+                            android:layout_width="match_parent" android:layout_height="wrap_content" />
                     </com.google.android.material.textfield.TextInputLayout>
-                    
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnSelectApps" android:text="@string/app_selector_btn" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:textColor="@color/opera_red" app:strokeColor="@color/opera_red" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginBottom="8dp"/>
-                    
-                    <com.google.android.material.button.MaterialButton 
-                        android:id="@+id/btnAdvanced" 
-                        android:text="@string/btn_settings_advanced" 
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" 
-                        android:textColor="@color/text_primary" 
-                        app:strokeColor="@color/text_secondary" 
-                        android:layout_width="match_parent" 
-                        android:layout_height="56dp"/>
-                        
-                    <TextView android:text="@string/app_selector_desc" android:textSize="12sp" android:textColor="@color/text_secondary" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
+
+
+                    <!-- Выбор режима проксирования -->
+                    <TextView
+                        android:text="@string/mode_title"
+                        android:textSize="14sp"
+                        android:textColor="@color/opera_red"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp" />
+
+                    <RadioGroup
+                        android:id="@+id/rgAppMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbModeWhitelist"
+                            android:text="@string/mode_whitelist"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:checked="true"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbModeWhitelistDisallowed"
+                            android:text="@string/mode_whitelist_disallowed"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/rbModeBlacklist"
+                            android:text="@string/mode_blacklist"
+                            android:textColor="@color/text_primary"
+                            app:buttonTint="@color/opera_red"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </RadioGroup>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectApps" android:text="@string/app_selector_btn"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:textColor="@color/opera_red" app:strokeColor="@color/opera_red"
+                        android:layout_width="match_parent" android:layout_height="55dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAdvanced"
+                        android:text="@string/btn_settings_advanced"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:textColor="@color/text_primary"
+                        app:strokeColor="@color/text_secondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="55dp" />
+
+                    <TextView android:text="@string/app_selector_desc" android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Кнопка запуска -->
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnToggle" android:text="@string/btn_start" android:textSize="18sp" android:textStyle="bold" android:padding="16dp" app:cornerRadius="30dp" app:backgroundTint="@color/opera_red" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="24dp" android:elevation="6dp"/>
-            
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnToggle"
+                android:text="@string/btn_start" android:textSize="18sp" android:textStyle="bold"
+                android:padding="16dp" app:cornerRadius="30dp" app:backgroundTint="@color/opera_red"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp" android:elevation="6dp" />
+
             <!-- Лог -->
-			<LinearLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -130,7 +213,7 @@
                     android:textColor="@color/text_primary"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"/>
+                    android:layout_weight="1" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnClearLog"
@@ -140,7 +223,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:paddingTop="0dp"
-                    android:paddingBottom="0dp"/>
+                    android:paddingBottom="0dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCopyLog"
@@ -150,24 +233,27 @@
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:paddingTop="0dp"
-                    android:paddingBottom="0dp"/>
+                    android:paddingBottom="0dp" />
             </LinearLayout>
-            
-            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="400dp" app:cardCornerRadius="12dp" app:cardBackgroundColor="@color/log_background" app:strokeColor="@color/divider" app:strokeWidth="1dp" app:contentPadding="0dp">
+
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="400dp" app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@color/log_background" app:strokeColor="@color/divider"
+                app:strokeWidth="1dp" app:contentPadding="0dp">
                 <ScrollView
                     android:id="@+id/svLog"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:fillViewport="true">
-                    <TextView 
-                        android:id="@+id/tvLog" 
-                        android:layout_width="match_parent" 
-                        android:layout_height="wrap_content" 
+                    <TextView
+                        android:id="@+id/tvLog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:padding="16dp"
-                        android:fontFamily="monospace" 
-                        android:textSize="11sp" 
-                        android:textColor="@color/log_text" 
-                        android:textIsSelectable="true"/>
+                        android:fontFamily="monospace"
+                        android:textSize="11sp"
+                        android:textColor="@color/log_text"
+                        android:textIsSelectable="true" />
                 </ScrollView>
             </com.google.android.material.card.MaterialCardView>
 

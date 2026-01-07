@@ -24,6 +24,7 @@ jobs:
       uses: gradle/actions/setup-gradle@v5
       with:
         gradle-version: '8.5'
+        dependency-graph: disabled
 
     # 4. Устанавливаем утилиты для работы с архивами и JSON
     #- name: Install tools

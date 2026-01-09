@@ -11,3 +11,4 @@ updates:
       interval: "monthly"
     ignore:
       - dependency-name: "gradle/actions/setup-gradle"
+      - dependency-name: "gradle/actions"

@@ -39,8 +39,8 @@
     <string name="help_fake_sni">Fake SNI маскирует настоящее название сайта в TLS-соединении, чтобы обойти блокировки провайдера или цензуру.\n\nАдрес ЛЮБОГО сайта из "белого списка" провайдера, который работает в мобильной сети/WiFI.\n\nБез www или http:// или https://</string>
 
     <string name="pref_upstream_proxy">Промежуточный прокси-сервер (Upstream Proxy)</string>
-    <string name="pref_upstream_proxy_hint">Например socks5://1.2.3.4:1080</string>
-    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик.\nПоддерживает http/socks5.</string>
+    <string name="pref_upstream_proxy_hint">Например socks5://127.0.0.1:1080</string>
+    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик.\nМожно совместить с ByeByeDPI в режиме прокси.\n\nПоддерживает формат: http|https|socks5|socks5h://[login:password@]host[:port]\nПримеры: http://user:password@192.168.1.1:3128, socks5://127.0.0.1:1080.</string>
 
     <!-- API/IP ADDRESS -->
     <string name="pref_api_address">API или IP для подключения к серверу</string>
@@ -60,7 +60,7 @@
     
     <string name="pref_test_url">Тестовый URL для выбора быстрого сервера (Benchmark)</string>
     <string name="pref_test_url_hint">Например https://ajax.googleapis.com/ajax/libs/indefinite-observable/2.0.1/indefinite-observable.bundle.js</string>
-    <string name="help_test_url">URL, используемый для тестирования скорости и выбора самого быстрого сервера, ожидает ответа со статусом 200.</string>
+    <string name="help_test_url">URL, используемый для тестирования скорости и выбора самого быстрого сервера. Ожидает ответа со статусом 200.</string>
     
     <string name="pref_cmd_args">Аргументы запуска</string>
     <string name="pref_manual_mode">Ручное редактирование команды</string>

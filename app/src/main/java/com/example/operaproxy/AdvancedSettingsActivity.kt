@@ -1,18 +1,22 @@
 package com.example.operaproxy
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.Toast
-import android.content.Intent
-import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -21,6 +25,10 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class AdvancedSettingsActivity : AppCompatActivity() {
 
@@ -53,6 +61,23 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     // Временные переменные для генерации превью
     private var mainCountry = "EU"
     private var mainDns = "8.8.8.8"
+
+    // Лаунчеры для сохранения/загрузки файла
+    private val exportJsonLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                writeSettingsToUri(uri)
+            }
+        }
+    }
+
+    private val importJsonLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                readSettingsFromUri(uri)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +132,26 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             } catch (_: Exception) {
                 Toast.makeText(this, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.advanced_settings_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_export_json -> {
+                saveValues() // Сначала сохраняем текущие поля в префы
+                startExport()
+                true
+            }
+            R.id.action_import_json -> {
+                startImport()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
@@ -489,5 +534,138 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             .apply()
         
         updateCmdPreview()
+    }
+
+    // --- JSON Export/Import Logic ---
+
+    private fun startExport() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "operaproxy_config.json")
+        }
+        exportJsonLauncher.launch(intent)
+    }
+
+    private fun startImport() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+        }
+        importJsonLauncher.launch(intent)
+    }
+
+    private fun writeSettingsToUri(uri: Uri) {
+        try {
+            val json = JSONObject()
+            
+            // Основные настройки
+            json.put("DNS", prefs.getString("DNS", "8.8.8.8"))
+            
+            // Преобразуем ID страны в строку для переносимости
+            val countryId = prefs.getInt("COUNTRY_ID", R.id.rbEU)
+            val countryCode = when(countryId) {
+                R.id.rbAS -> "AS"
+                R.id.rbAM -> "AM"
+                else -> "EU"
+            }
+            json.put("COUNTRY_CODE", countryCode)
+
+            json.put("PROXY_APP_MODE", prefs.getInt("PROXY_APP_MODE", 0))
+            json.put("PROXY_ONLY", prefs.getBoolean("PROXY_ONLY", false))
+            json.put("SOCKS_MODE", prefs.getBoolean("SOCKS_MODE", false))
+            json.put("BIND_ADDRESS", prefs.getString("BIND_ADDRESS", DEFAULT_BIND))
+            json.put("FAKE_SNI", prefs.getString("FAKE_SNI", ""))
+            json.put("UPSTREAM_PROXY", prefs.getString("UPSTREAM_PROXY", ""))
+            json.put("BOOTSTRAP_DNS", prefs.getString("BOOTSTRAP_DNS", DEFAULT_BOOTSTRAP))
+            json.put("API_ADDRESS", prefs.getString("API_ADDRESS", ""))
+            json.put("VERBOSITY", prefs.getInt("VERBOSITY", 20))
+            json.put("TUN2PROXY_DNS_STRATEGY", prefs.getInt("TUN2PROXY_DNS_STRATEGY", 1))
+            json.put("TEST_URL", prefs.getString("TEST_URL", DEFAULT_TEST_URL))
+            json.put("MANUAL_CMD_MODE", prefs.getBoolean("MANUAL_CMD_MODE", false))
+            json.put("CUSTOM_CMD_STRING", prefs.getString("CUSTOM_CMD_STRING", ""))
+
+            // Список приложений
+            val appsArray = JSONArray()
+            val appsSet = prefs.getStringSet("APPS", emptySet())
+            appsSet?.forEach { appsArray.put(it) }
+            json.put("APPS", appsArray)
+
+            contentResolver.openOutputStream(uri)?.use { outputStream ->
+                var jsonString = json.toString(4)
+                // Убираем экранирование слешей
+                jsonString = jsonString.replace("\\/", "/")
+                outputStream.write(jsonString.toByteArray())
+            }
+            Toast.makeText(this, "Настройки сохранены в JSON", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Ошибка сохранения: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun readSettingsFromUri(uri: Uri) {
+        try {
+            val stringBuilder = StringBuilder()
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        stringBuilder.append(line)
+                    }
+                }
+            }
+
+            val json = JSONObject(stringBuilder.toString())
+            val editor = prefs.edit()
+
+            // Восстанавливаем простые типы
+            if (json.has("DNS")) editor.putString("DNS", json.getString("DNS"))
+            
+            // Восстанавливаем страну
+            if (json.has("COUNTRY_CODE")) {
+                val cCode = json.getString("COUNTRY_CODE")
+                val cId = when(cCode) {
+                    "AS" -> R.id.rbAS
+                    "AM" -> R.id.rbAM
+                    else -> R.id.rbEU
+                }
+                editor.putInt("COUNTRY_ID", cId)
+            }
+
+            if (json.has("PROXY_APP_MODE")) editor.putInt("PROXY_APP_MODE", json.getInt("PROXY_APP_MODE"))
+            if (json.has("PROXY_ONLY")) editor.putBoolean("PROXY_ONLY", json.getBoolean("PROXY_ONLY"))
+            if (json.has("SOCKS_MODE")) editor.putBoolean("SOCKS_MODE", json.getBoolean("SOCKS_MODE"))
+            if (json.has("BIND_ADDRESS")) editor.putString("BIND_ADDRESS", json.getString("BIND_ADDRESS"))
+            if (json.has("FAKE_SNI")) editor.putString("FAKE_SNI", json.getString("FAKE_SNI"))
+            if (json.has("UPSTREAM_PROXY")) editor.putString("UPSTREAM_PROXY", json.getString("UPSTREAM_PROXY"))
+            if (json.has("BOOTSTRAP_DNS")) editor.putString("BOOTSTRAP_DNS", json.getString("BOOTSTRAP_DNS"))
+            if (json.has("API_ADDRESS")) editor.putString("API_ADDRESS", json.getString("API_ADDRESS"))
+            if (json.has("VERBOSITY")) editor.putInt("VERBOSITY", json.getInt("VERBOSITY"))
+            if (json.has("TUN2PROXY_DNS_STRATEGY")) editor.putInt("TUN2PROXY_DNS_STRATEGY", json.getInt("TUN2PROXY_DNS_STRATEGY"))
+            if (json.has("TEST_URL")) editor.putString("TEST_URL", json.getString("TEST_URL"))
+            if (json.has("MANUAL_CMD_MODE")) editor.putBoolean("MANUAL_CMD_MODE", json.getBoolean("MANUAL_CMD_MODE"))
+            if (json.has("CUSTOM_CMD_STRING")) editor.putString("CUSTOM_CMD_STRING", json.getString("CUSTOM_CMD_STRING"))
+
+            // Восстанавливаем список приложений
+            if (json.has("APPS")) {
+                val appsArray = json.getJSONArray("APPS")
+                val appsSet = HashSet<String>()
+                for (i in 0 until appsArray.length()) {
+                    appsSet.add(appsArray.getString(i))
+                }
+                editor.putStringSet("APPS", appsSet)
+                // Обновляем статический список в MainActivity, чтобы изменения применились сразу
+                MainActivity.selectedApps = ArrayList(appsSet)
+            }
+
+            editor.apply()
+            
+            // Обновляем UI текущей активности
+            loadValues()
+            
+            Toast.makeText(this, "Настройки из JSON загружены", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Ошибка загрузки JSON: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 }

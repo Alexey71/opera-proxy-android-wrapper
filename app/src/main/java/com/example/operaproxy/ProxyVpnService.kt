@@ -615,35 +615,17 @@ class ProxyVpnService : VpnService() {
                 logToUI("[BIN] Поиск бинарника: ${binaryPath.absolutePath}", fromBinary = false)
             }
 
-            val sslFile = File(filesDir, "cacert.pem")
-            if (!sslFile.exists()) {
-                logToUI("[FS] Копирование сертификата...")
-                try {
-                    assets.open("cacert.pem").use { input ->
-                        FileOutputStream(sslFile).use { o -> input.copyTo(o) }
-                    }
-                } catch (e: Exception) {
-                    logToUI("[ERROR] Ошибка копирования сертификата: ${e.message} \n")
-                }
-            }
-
             val args = ArrayList<String>()
             args.add(binaryPath.absolutePath)
 
             if (manualCmdMode && customCmdString.isNotBlank()) {
                 val tokens = customCmdString.trim().split("\\s+".toRegex())
                 args.addAll(tokens)
-
-                if (!customCmdString.contains("-cafile")) {
-                    args.add("-cafile")
-                    args.add(sslFile.absolutePath)
-                }
             } else {
                 args.add("-bind-address"); args.add(bindAddress)
                 args.add("-country"); args.add(currentCountry)
                 args.add("-verbosity")
                 args.add(if (verbosity == 5) "50" else verbosity.toString())
-                args.add("-cafile"); args.add(sslFile.absolutePath)
 
                 if (bootstrapDns.isNotEmpty()) { args.add("-bootstrap-dns"); args.add(bootstrapDns) }
                 if (fakeSni.isNotEmpty()) { args.add("-fake-SNI"); args.add(fakeSni) }

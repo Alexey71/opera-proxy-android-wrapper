@@ -38,12 +38,8 @@ jobs:
         set -e
 
         # Папки под обе архитектуры
-        mkdir -p app/src/main/assets
         mkdir -p app/src/main/jniLibs/arm64-v8a
         mkdir -p app/src/main/jniLibs/armeabi-v7a
-
-        # SSL сертификат
-        curl -L -o app/src/main/assets/cacert.pem https://curl.se/ca/cacert.pem
 
         # -----------------------------
         # Opera Proxy: latest release

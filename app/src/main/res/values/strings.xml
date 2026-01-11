@@ -40,7 +40,7 @@
 
     <string name="pref_upstream_proxy">Промежуточный прокси-сервер (Upstream Proxy)</string>
     <string name="pref_upstream_proxy_hint">Например socks5://127.0.0.1:1080</string>
-    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик.\nМожно совместить с ByeByeDPI в режиме прокси.\n\nПоддерживает формат: http|https|socks5|socks5h://[login:password@]host[:port]\nПримеры: http://user:password@192.168.1.1:3128, socks5://127.0.0.1:1080.</string>
+    <string name="help_upstream_proxy">Внешний прокси, через который будет проходить весь трафик.\nМожно совместить с ByeByeDPI в режиме прокси.\n\nПоддерживает формат:\nhttp|https|socks5|socks5h://[login:password@]host[:port]\n\nПримеры:\nhttp://user:password@192.168.1.1:3128\nsocks5://127.0.0.1:1080.</string>
 
     <!-- API/IP ADDRESS -->
     <string name="pref_api_address">API или IP для подключения к серверу</string>
@@ -49,7 +49,7 @@
     <string name="dialog_clear_bootstrap_title">Очистить DNS Bootstrap?</string>
     <string name="dialog_clear_bootstrap_msg">Вы установили прямой API/IP адрес.\n\Хотите очистить поле "DNS для инициализации", чтобы соединение шло напрямую без резолвинга через DoH.</string>
 
-    <string name="pref_verbosity">Уровень логирования</string>
+    <string name="pref_verbosity">Логи</string>
     <string name="help_verbosity">Детализация логов. 10 - макс. детализация, 50 - только критические ошибки.</string>
 
     <string name="pref_socks_mode">Режим SOCKS5</string>
@@ -93,12 +93,12 @@
 
     <!-- Массивы значений -->
     <string-array name="verbosity_levels">
-        <item>Логи оболочки и tun2proxy (Wrapper)</item>
-        <item>10 (Debug) Все логи</item>
-        <item>20 (Info)</item>
-        <item>30 (Warning)</item>
-        <item>40 (Error)</item>
-        <item>50 (Critical)</item>
+        <item>(Wrapper) Оболочка</item>
+        <item>(Debug) Все логи</item>
+        <item>(Info) Стандарт</item>
+        <item>(Warning)</item>
+        <item>(Error)</item>
+        <item>(Critical)</item>
     </string-array>
     
     <string-array name="verbosity_values">
@@ -112,5 +112,18 @@
     
     <string name="about_section">О программе</string>
     <string name="github_link_text">Новые релизы (GitHub SLY-F0X)</string>
-    
+    <string name="Logs_description">Лог событий</string>
+    <string name="ClearLogs">Очистить</string>
+    <string name="CopyLogs">Копировать</string>
+    <string name="DNS_for_VPN">8.8.8.8</string>
+    <string name="ServerAM">Америка</string>
+    <string name="ServerAS">Азия</string>
+    <string name="ServerEU">Европа</string>
+    <string name="AdvSettings_localnetwork">Локальная сеть</string>
+    <string name="AdvSettings_HideTraffic">Трафик и маскировка</string>
+    <string name="AdvSettings_API_description">В случае ошибок при подключении к серверам</string>
+    <string name="AdvSettings_Debug">Отладка</string>
+    <string name="AdvSettings_cmd_preview_override">CMD Preview / Override</string>
+    <string name="AdvSettings_dns">DNS</string>
+
 </resources>

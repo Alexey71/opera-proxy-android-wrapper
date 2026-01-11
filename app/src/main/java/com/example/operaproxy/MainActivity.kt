@@ -16,7 +16,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
@@ -24,6 +27,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -32,11 +37,14 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
     private lateinit var tvLog: TextView
     private lateinit var svLog: ScrollView
+    private lateinit var llLogContainer: LinearLayout
     private lateinit var btnToggle: Button
     private lateinit var btnSelectApps: Button
     private lateinit var btnAdvanced: Button
     private lateinit var btnCopyLog: Button
     private lateinit var btnClearLog: Button
+    private lateinit var btnCollapseLog: MaterialButton
+    private lateinit var cvLogContent: MaterialCardView
     private lateinit var rgCountry: RadioGroup
     private lateinit var rgAppMode: RadioGroup
     private lateinit var etDns: TextInputEditText
@@ -67,14 +75,19 @@ class MainActivity : AppCompatActivity() {
             intent?.getStringExtra("log")?.let { rawMessage ->
                 val timestamp = timeFormatter.format(Date())
                 val formattedLog = "[$timestamp] $rawMessage\n"
-                val view = svLog.getChildAt(0)
-                val diff = if (view != null) (view.bottom - (svLog.height + svLog.scrollY)) else 0
-                val wasAtBottom = diff <= 100
-
+                
+                // Прокрутка только если лог видимый
+                val isVisible = cvLogContent.visibility == View.VISIBLE
+                
                 tvLog.append(formattedLog)
 
-                if (wasAtBottom) {
-                    svLog.post { svLog.fullScroll(ScrollView.FOCUS_DOWN) }
+                if (isVisible) {
+                    val view = svLog.getChildAt(0)
+                    val diff = if (view != null) (view.bottom - (svLog.height + svLog.scrollY)) else 0
+                    val wasAtBottom = diff <= 100
+                    if (wasAtBottom) {
+                        svLog.post { svLog.fullScroll(ScrollView.FOCUS_DOWN) }
+                    }
                 }
             }
         }
@@ -137,15 +150,26 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         tvLog = findViewById(R.id.tvLog)
         svLog = findViewById(R.id.svLog)
+        llLogContainer = findViewById(R.id.llLogContainer)
         btnToggle = findViewById(R.id.btnToggle)
         btnSelectApps = findViewById(R.id.btnSelectApps)
         btnAdvanced = findViewById(R.id.btnAdvanced)
         btnCopyLog = findViewById(R.id.btnCopyLog)
         btnClearLog = findViewById(R.id.btnClearLog)
+        btnCollapseLog = findViewById(R.id.btnCollapseLog)
+        cvLogContent = findViewById(R.id.cvLogContent)
         rgCountry = findViewById(R.id.rgCountry)
         rgAppMode = findViewById(R.id.rgAppMode)
         etDns = findViewById(R.id.etDns)
         tvLog.setTextIsSelectable(true)
+        
+        // Показываем логи, если сервис уже работает при входе
+        if (isServiceRunning()) {
+            llLogContainer.visibility = View.VISIBLE
+        } else {
+            llLogContainer.visibility = View.GONE
+        }
+        
     }
 
     private fun setupListeners() {
@@ -161,6 +185,11 @@ class MainActivity : AppCompatActivity() {
 
         btnToggle.setOnClickListener {
             if (!isServiceRunning()) {
+                llLogContainer.visibility = View.VISIBLE
+                // При старте разворачиваем логи, если они были свернуты
+                cvLogContent.visibility = View.VISIBLE
+                btnCollapseLog.rotation = 0f
+                
                 saveSettings()
                 checkPermissionsAndStart()
             } else {
@@ -179,6 +208,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnClearLog.setOnClickListener { tvLog.text = "" }
+
+        // Крутим логи, как хотим
+        btnCollapseLog.setOnClickListener {
+            if (cvLogContent.visibility == View.VISIBLE) {
+                cvLogContent.visibility = View.GONE
+                btnCollapseLog.animate().rotation(180f).setDuration(200).start()
+            } else {
+                cvLogContent.visibility = View.VISIBLE
+                btnCollapseLog.animate().rotation(0f).setDuration(200).start()
+                
+                svLog.post { svLog.fullScroll(ScrollView.FOCUS_DOWN) }
+            }
+        }
+
+        // Изоляция прокрутки
+        svLog.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            
+            if ((event.action and MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP || 
+                (event.action and MotionEvent.ACTION_MASK) == MotionEvent.ACTION_CANCEL) {
+                v.parent.requestDisallowInterceptTouchEvent(false)
+            }
+            false
+        }
     }
 
     override fun onResume() {

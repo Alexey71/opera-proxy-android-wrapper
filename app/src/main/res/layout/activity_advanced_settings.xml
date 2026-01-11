@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_app">
@@ -37,7 +38,7 @@
 
             <!-- Группа: Сеть -->
             <TextView
-                android:text="Локальная сеть"
+                android:text="@string/AdvSettings_localnetwork"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
                 android:textSize="15sp"
@@ -90,7 +91,7 @@
 
             <!-- Группа: Трафик -->
             <TextView
-                android:text="Трафик и маскировка"
+                android:text="@string/AdvSettings_HideTraffic"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
                 android:textSize="15sp"
@@ -150,7 +151,7 @@
 
             <!-- Группа: DNS -->
             <TextView
-                android:text="DNS"
+                android:text="@string/AdvSettings_dns"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
                 android:textSize="15sp"
@@ -182,7 +183,7 @@
                     android:textColor="@color/text_primary"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:focusable="false"
+                    android:focusable="true"
                     android:focusableInTouchMode="false"
                     android:clickable="true"
                     android:cursorVisible="false" />
@@ -232,25 +233,20 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="@string/pref_tun_dns_strategy"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:textSize="12sp" />
 
-                    <TextView
-                        android:text="Метод обработки DNS в туннеле"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
                 <Spinner
                     android:id="@+id/spDnsStrategy"
                     android:layout_width="wrap_content"
-                    android:layout_height="46dp"
-                    android:minWidth="130dp"
+                    android:layout_height="44dp"
+                    android:importantForAccessibility="no"
+                    android:minWidth="100dp"
                     android:spinnerMode="dropdown" />
 
                 <ImageView
@@ -262,12 +258,13 @@
                     android:layout_marginStart="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    tools:ignore="ContentDescription" />
             </LinearLayout>
 
            <!-- API ADDRESS -->
             <TextView
-                android:text="В случае ошибок при подключении к серверам"
+                android:text="@string/AdvSettings_API_description"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
                 android:textSize="15sp"
@@ -302,7 +299,7 @@
 
             <!-- Группа: Логи -->
             <TextView
-                android:text="Отладка"
+                android:text="@string/AdvSettings_Debug"
                 android:textColor="@color/opera_red"
                 android:textStyle="bold"
                 android:textSize="15sp"
@@ -323,17 +320,17 @@
                 android:layout_marginBottom="8dp">
 
                 <TextView
-                    android:text="@string/pref_verbosity"
-                    android:textColor="@color/text_primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content" />
+                    android:text="@string/pref_verbosity"
+                    android:textColor="@color/text_primary" />
 
                 <Spinner
                     android:id="@+id/spVerbosity"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:minWidth="120dp" />
+                    android:layout_height="44dp"
+                    android:minWidth="100dp" />
             </LinearLayout>
 
             <!-- КОМАНДНАЯ СТРОКА -->
@@ -359,7 +356,7 @@
                 android:id="@+id/tilCmdPreview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="CMD Preview / Override"
+                android:hint="@string/AdvSettings_cmd_preview_override"
                 android:textColorHint="@color/text_secondary"
                 app:hintTextColor="@color/opera_red"
                 app:boxStrokeColor="@color/opera_red"
@@ -420,13 +417,15 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                android:layout_marginBottom="22dp">
+                android:layout_marginBottom="22dp"
+                tools:targetApi="23">
 
                 <ImageView
-                    android:src="@drawable/ic_github"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:layout_marginEnd="16dp"
+                    android:contentDescription="github logo"
+                    android:src="@drawable/ic_github"
                     app:tint="@color/text_primary" />
 
                 <TextView

@@ -1,10 +1,14 @@
 package com.example.operaproxy
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -33,6 +37,9 @@ class AppSelectionActivity : AppCompatActivity() {
     private lateinit var searchInput: EditText
     private lateinit var adapter: AppAdapter
     private val allApps: MutableList<AppInfo> = mutableListOf()
+    
+    // Флаг для отображения системных приложений
+    private var showSystemApps = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +48,7 @@ class AppSelectionActivity : AppCompatActivity() {
         selectedPkgs.clear()
         selectedPkgs.addAll(prefs.getStringSet("APPS", emptySet()).orEmpty())
 
-        // Корневой лейаут: вертикальный, фон как в основном приложении
+        // Корневой лейаут
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
@@ -49,10 +56,31 @@ class AppSelectionActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             setBackgroundColor(ContextCompat.getColor(context, R.color.background_app))
-            setPadding(12, 12, 12, 12)
         }
 
-        // Поле поиска по приложениям
+        // Добавляем Toolbar
+        val toolbar = androidx.appcompat.widget.Toolbar(this).apply {
+            setBackgroundColor(ContextCompat.getColor(context, R.color.background_card))
+            setTitleTextColor(ContextCompat.getColor(context, R.color.white))
+            title = getString(R.string.app_selector_btn) // "Выбор приложений"
+            setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+            setNavigationOnClickListener { finish() }
+        }
+        root.addView(toolbar)
+        setSupportActionBar(toolbar)
+
+        // Контейнер для контента с отступами
+        val contentLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setPadding(12, 12, 12, 12)
+        }
+        root.addView(contentLayout)
+
+        // Поле поиска
         searchInput = EditText(this).apply {
             hint = "Поиск приложений"
             setHintTextColor(ContextCompat.getColor(context, R.color.text_secondary))
@@ -64,9 +92,9 @@ class AppSelectionActivity : AppCompatActivity() {
                 bottomMargin = 8
             }
         }
-        root.addView(searchInput)
+        contentLayout.addView(searchInput)
 
-        // Список приложений
+        // Список
         recyclerView = RecyclerView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -75,56 +103,131 @@ class AppSelectionActivity : AppCompatActivity() {
             )
             layoutManager = LinearLayoutManager(this@AppSelectionActivity)
         }
-        root.addView(recyclerView)
+        contentLayout.addView(recyclerView)
 
         setContentView(root)
 
-        // Загрузка списка приложений в фоне
-        Thread {
-            val pm = packageManager
-            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
-            intent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-            
-            val selfPkg = packageName
+        // Инициализация адаптера пустым списком
+        adapter = AppAdapter(allApps)
+        recyclerView.adapter = adapter
 
-            val apps = pm.queryIntentActivities(intent, 0).mapNotNull {
-                val pkg = it.activityInfo.packageName
-                if (pkg == selfPkg) return@mapNotNull null
-                val name = it.loadLabel(pm).toString()
-                val icon = it.loadIcon(pm)
-                val checked = selectedPkgs.contains(pkg)
-                AppInfo(name, pkg, icon, checked)
-            }.sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
+        loadApps()
 
-            allApps.clear()
-            allApps.addAll(apps)
-
-            runOnUiThread {
-                adapter = AppAdapter(allApps)
-                recyclerView.adapter = adapter
-            }
-        }.start()
-
-        // Фильтрация по имени / пакету
+        // Фильтрация
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val q = s?.toString() ?: ""
                 adapter.filter(q)
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
     }
 
-    private fun persistSelection() {
-        prefs.edit().putStringSet("APPS", selectedPkgs.toSet()).apply()
+    // Создание меню
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_app_selection, menu)
+        return true
     }
 
-    inner class AppAdapter(private val fullList: List<AppInfo>) :
+    // Обработка кликов меню
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_select_all -> {
+                selectAll(true)
+                true
+            }
+            R.id.action_clear_all -> {
+                selectAll(false)
+                true
+            }
+            R.id.action_show_system -> {
+                item.isChecked = !item.isChecked
+                showSystemApps = item.isChecked
+                loadApps() // Перезагрузка списка
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun selectAll(select: Boolean) {
+        // Меняем состояние только у тех, что сейчас в фильтрованном списке
+        adapter.getFilteredItems().forEach { appInfo ->
+            appInfo.isSelected = select
+            if (select) {
+                selectedPkgs.add(appInfo.packageName)
+            } else {
+                selectedPkgs.remove(appInfo.packageName)
+            }
+        }
+        persistSelection()
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun loadApps() {
+        Thread {
+            val pm = packageManager
+            val selfPkg = packageName
+
+            val apps = if (showSystemApps) {
+                // Загружаем ВСЕ пакеты
+                pm.getInstalledPackages(0).mapNotNull { pkgInfo ->
+                    if (pkgInfo.packageName == selfPkg) return@mapNotNull null
+                    
+                    val appInfo = pkgInfo.applicationInfo ?: return@mapNotNull null
+                    val name = appInfo.loadLabel(pm).toString()
+                    val icon = appInfo.loadIcon(pm)
+                    val checked = selectedPkgs.contains(pkgInfo.packageName)
+                    AppInfo(name, pkgInfo.packageName, icon, checked)
+                }
+            } else {
+                // Только лаунчеры (обычные приложения)
+                val intent = android.content.Intent(android.content.Intent.ACTION_MAIN, null)
+                intent.addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                
+                pm.queryIntentActivities(intent, 0).mapNotNull {
+                    val pkg = it.activityInfo.packageName
+                    if (pkg == selfPkg) return@mapNotNull null
+                    val name = it.loadLabel(pm).toString()
+                    val icon = it.loadIcon(pm)
+                    val checked = selectedPkgs.contains(pkg)
+                    AppInfo(name, pkg, icon, checked)
+                }
+            }
+
+            // Убираем дубликаты (для queryIntentActivities, если у приложения несколько активностей)
+            val uniqueApps = apps.distinctBy { it.packageName }
+                .sortedWith(compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name })
+
+            allApps.clear()
+            allApps.addAll(uniqueApps)
+
+            runOnUiThread {
+                adapter.updateData(allApps)
+                // Применяем текущий фильтр поиска, если он есть
+                adapter.filter(searchInput.text.toString())
+            }
+        }.start()
+    }
+
+    private fun persistSelection() {
+        prefs.edit().putStringSet("APPS", selectedPkgs.toSet()).apply()
+        // Обновляем статический список в MainActivity сразу
+        MainActivity.selectedApps = ArrayList(selectedPkgs)
+    }
+
+    inner class AppAdapter(private var fullList: List<AppInfo>) :
         RecyclerView.Adapter<AppAdapter.Holder>() {
 
         private val filteredList: MutableList<AppInfo> = fullList.toMutableList()
+
+        fun updateData(newList: List<AppInfo>) {
+            fullList = newList
+            filter("") // Сброс фильтра при полной перезагрузке
+        }
+        
+        fun getFilteredItems(): List<AppInfo> = filteredList
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
             val view =
@@ -137,11 +240,15 @@ class AppSelectionActivity : AppCompatActivity() {
             holder.name.text = item.name
             holder.pkg.text = item.packageName
             holder.icon.setImageDrawable(item.icon)
+            
+            // Удаляем слушатель перед установкой состояния, чтобы не триггерить лишние события
+            holder.check.setOnCheckedChangeListener(null)
             holder.check.isChecked = item.isSelected
 
-            val listener = View.OnClickListener {
-                item.isSelected = !item.isSelected
-                holder.check.isChecked = item.isSelected
+            val performClick = {
+                val newState = !item.isSelected
+                item.isSelected = newState
+                holder.check.isChecked = newState
 
                 if (item.isSelected) {
                     selectedPkgs.add(item.packageName)
@@ -151,8 +258,8 @@ class AppSelectionActivity : AppCompatActivity() {
                 persistSelection()
             }
 
-            holder.itemView.setOnClickListener(listener)
-            holder.check.setOnClickListener(listener)
+            holder.itemView.setOnClickListener { performClick() }
+            holder.check.setOnClickListener { performClick() }
         }
 
         override fun getItemCount() = filteredList.size
@@ -170,7 +277,7 @@ class AppSelectionActivity : AppCompatActivity() {
                     }
                 )
             }
-            // сохраняем сортировку: выбранные наверх
+            // Сортировка, выбранные всегда сверху
             filteredList.sortWith(
                 compareByDescending<AppInfo> { it.isSelected }.thenBy { it.name }
             )

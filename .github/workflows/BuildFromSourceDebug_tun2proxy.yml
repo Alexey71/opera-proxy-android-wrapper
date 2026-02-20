@@ -10,7 +10,7 @@ jobs:
 
     steps:
     # 1. Загружаем код из репозитория
-    - uses: actions/checkout@v6.0.1
+    - uses: actions/checkout@v6.0.2
 
     # 2. Настраиваем Java 17
     - name: set up JDK 17

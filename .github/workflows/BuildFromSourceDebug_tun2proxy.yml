@@ -114,7 +114,7 @@ jobs:
       
     # 8. Загрузка готового APK
     - name: Upload APKs
-      uses: actions/upload-artifact@v6.0.0
+      uses: actions/upload-artifact@v7.0.0
       with:
         name: Opera_Proxy_v${{ env.APP_VERSION }}
         path: |

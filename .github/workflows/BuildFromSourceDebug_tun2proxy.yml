@@ -38,35 +38,35 @@ jobs:
         set -e
 
         # Папки под обе архитектуры
-        mkdir -p app/src/main/jniLibs/arm64-v8a
-        mkdir -p app/src/main/jniLibs/armeabi-v7a
+        #mkdir -p app/src/main/jniLibs/arm64-v8a
+        #mkdir -p app/src/main/jniLibs/armeabi-v7a
 
         # -----------------------------
-        # Opera Proxy: latest release
+        # Opera Proxy: latest release (Автор удалил исходный репозиторий и все сборки)
         # arm64: opera-proxy.android-arm64
         # armv7: opera-proxy.android-arm
         # -----------------------------
-        OPERA_PROXY_ARM64_URL=$(curl -s https://api.github.com/repos/Snawoot/opera-proxy/releases/latest \
-          | jq -r '.assets[] | select(.name == "opera-proxy.android-arm64") | .browser_download_url')
+        #OPERA_PROXY_ARM64_URL=$(curl -s https://api.github.com/repos/Snawoot/opera-proxy/releases/latest \
+        #  | jq -r '.assets[] | select(.name == "opera-proxy.android-arm64") | .browser_download_url')
 
-        OPERA_PROXY_ARMV7_URL=$(curl -s https://api.github.com/repos/Snawoot/opera-proxy/releases/latest \
-          | jq -r '.assets[] | select(.name == "opera-proxy.android-arm") | .browser_download_url')
+        #OPERA_PROXY_ARMV7_URL=$(curl -s https://api.github.com/repos/Snawoot/opera-proxy/releases/latest \
+        #  | jq -r '.assets[] | select(.name == "opera-proxy.android-arm") | .browser_download_url')
 
-        if [ -z "$OPERA_PROXY_ARM64_URL" ] || [ "$OPERA_PROXY_ARM64_URL" = "null" ]; then
-          echo "Не найден asset opera-proxy.android-arm64"
-          exit 1
-        fi
+        #if [ -z "$OPERA_PROXY_ARM64_URL" ] || [ "$OPERA_PROXY_ARM64_URL" = "null" ]; then
+        #  echo "Не найден asset opera-proxy.android-arm64"
+        #  exit 1
+        #fi
 
-        if [ -z "$OPERA_PROXY_ARMV7_URL" ] || [ "$OPERA_PROXY_ARMV7_URL" = "null" ]; then
-          echo "Не найден asset opera-proxy.android-arm"
-          exit 1
-        fi
+        #if [ -z "$OPERA_PROXY_ARMV7_URL" ] || [ "$OPERA_PROXY_ARMV7_URL" = "null" ]; then
+        #  echo "Не найден asset opera-proxy.android-arm"
+        #  exit 1
+        #fi
 
-        echo "Скачиваем opera-proxy arm64: $OPERA_PROXY_ARM64_URL"
-        curl -L -o app/src/main/jniLibs/arm64-v8a/liboperaproxy.so "$OPERA_PROXY_ARM64_URL"
+        #echo "Скачиваем opera-proxy arm64: $OPERA_PROXY_ARM64_URL"
+        #curl -L -o app/src/main/jniLibs/arm64-v8a/liboperaproxy.so "$OPERA_PROXY_ARM64_URL"
 
-        echo "Скачиваем opera-proxy armv7: $OPERA_PROXY_ARMV7_URL"
-        curl -L -o app/src/main/jniLibs/armeabi-v7a/liboperaproxy.so "$OPERA_PROXY_ARMV7_URL"
+        #echo "Скачиваем opera-proxy armv7: $OPERA_PROXY_ARMV7_URL"
+        #curl -L -o app/src/main/jniLibs/armeabi-v7a/liboperaproxy.so "$OPERA_PROXY_ARMV7_URL"
 
         # -----------------------------
         # tun2proxy: latest release (zip уже содержит обе папки)

@@ -78,6 +78,24 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             }
         }
     }
+    
+    private fun showLicenseDialog() {
+        val scroll = android.widget.ScrollView(this)
+        val text = android.widget.TextView(this).apply {
+            text = getString(R.string.license_text)
+            setPadding(48, 48, 48, 48)
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+        }
+        scroll.addView(text)
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.license_dialog_title)
+            .setView(scroll)
+            .setPositiveButton(R.string.license_close, null)
+            .show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,6 +150,10 @@ class AdvancedSettingsActivity : AppCompatActivity() {
             } catch (_: Exception) {
                 Toast.makeText(this, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
             }
+        }
+        
+        findViewById<View>(R.id.btnLicense).setOnClickListener {
+            showLicenseDialog()
         }
     }
 

@@ -126,4 +126,51 @@
     <string name="AdvSettings_cmd_preview_override">CMD Preview / Override</string>
     <string name="AdvSettings_dns">DNS</string>
 
+    <string name="license_section">Лицензия</string>
+    <string name="license_link_text">Посмотреть лицензию открытого ПО</string>
+    <string name="license_dialog_title">Лицензионное соглашение</string>
+    <string name="license_close">Закрыть</string>
+    <string name="license_text">
+    Modified MIT License (Non-Commercial, Network Copyleft)\n
+
+    Copyright (c) 2026 SLY-F0X\n
+    Includes components and/or concepts from "opera-proxy" Go binary by Snawoot\n
+    Includes components and/or concepts from the "Tun2Proxy" project\n
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software for strictly non-commercial purposes, including without limitation 
+    the rights to use, copy, modify, merge, publish, distribute, and/or sublicense
+    copies of the Software (excluding the right to sell or use for commercial advantage), 
+    and to permit persons to whom the Software is furnished to do so, subject to the 
+    following conditions:\n
+
+    1. Attribution Requirement:\n
+    The above copyright notices, this permission notice, and a clear, prominent 
+    indication of original authorship by SLY-F0X, as well as explicit attribution 
+    to Snawoot (for the opera-proxy Go binary) and the Tun2Proxy project, shall be 
+    included in all copies, substantial portions, or derivative works of the Software.
+
+    2. Non-Commercial Use Only:\n
+    The Software, as well as any modifications, derivative works, or integrations, 
+    shall not be used, directly or indirectly, for any commercial purpose, monetary 
+    gain, or to provide commercial services. 
+
+    3. Network Interaction and Copyleft (AGPL-style):\n
+    If you modify the Software, or if you run the Software (or any derivative work) 
+    on a server and let other users interact with it remotely through a computer network, 
+    you must clearly provide those users with an accessible opportunity to download 
+    the complete corresponding source code of the Software (including your modifications) 
+    free of charge. Any modified versions or derivative works must be distributed under 
+    the exact same terms of this modified license.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+    </string>
+
 </resources>

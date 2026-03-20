@@ -393,16 +393,6 @@
                 android:layout_height="44dp" />
 
             <!-- Ссылка на GitHub -->
-            <TextView
-                android:text="@string/about_section"
-                android:textColor="@color/opera_red"
-                android:textStyle="bold"
-                android:textSize="15sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="6dp" />
-
             <LinearLayout
                 android:id="@+id/btnGithubLink"
                 android:layout_width="match_parent"
@@ -410,21 +400,16 @@
                 android:background="@drawable/item_background"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:padding="12dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                android:layout_marginBottom="22dp"
-                tools:targetApi="23">
+                android:layout_marginBottom="8dp">
 
                 <ImageView
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:layout_marginEnd="16dp"
-                    android:contentDescription="github logo"
                     android:src="@drawable/ic_github"
                     app:tint="@color/text_primary" />
 
@@ -436,6 +421,41 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </LinearLayout>
+
+            <!-- Кнопка Лицензия -->
+            <LinearLayout
+                android:id="@+id/btnLicense"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/item_background"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:layout_marginBottom="10dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@android:drawable/ic_menu_info_details"
+                    app:tint="@color/text_primary" />
+
+                <TextView
+                    android:text="@string/license_link_text"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -131,11 +131,38 @@
     <string name="license_dialog_title">Лицензионное соглашение</string>
     <string name="license_close">Закрыть</string>
     <string name="license_text">
+    Программное обеспечение, а также любые модификации, производные работы или интеграции не должны использоваться, прямо или косвенно, для каких-либо коммерческих целей, получения денежной выгоды или предоставления коммерческих услуг.\n
+    ПО ИСКЛЮЧИТЕЛЬНО ДЛЯ ОЗНАКОМИТЕЛЬНЫХ ЦЕЛЕЙ!\n
+    
+    =================== License ===================\n
+    CC BY-NC-SA 4.0  https://creativecommons.org/licenses/by-nc-sa/4.0/ \n
+
+    Attribution-NonCommercial-ShareAlike 4.0 International\n
+    
+    You are free to:\n
+              Share — copy and redistribute the material in any medium or format\n
+            
+              Adapt — remix, transform, and build upon the material \n
+            
+              The licensor cannot revoke these freedoms as long as you follow the license terms. \n
+          
+     Under the following terms:\n
+              Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made. \n
+              You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.\n
+            
+              NonCommercial — You may not use the material for commercial purposes.\n
+            
+              ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original. \n
+
+              No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits. \n
+    
+    
+    =================== Modified MIT License ===================\n
     Modified MIT License (Non-Commercial, Network Copyleft)\n
 
     Copyright (c) 2026 SLY-F0X\n
-    Includes components and/or concepts from "opera-proxy" Go binary by Snawoot\n
-    Includes components and/or concepts from the "Tun2Proxy" project\n
+    Includes components and/or concepts from "opera-proxy" Go binary by Snawoot https://github.com/Snawoot  \n
+    Includes components and/or concepts from the "Tun2Proxy" project https://github.com/tun2proxy/tun2proxy  \n
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -145,24 +172,24 @@
     and to permit persons to whom the Software is furnished to do so, subject to the 
     following conditions:\n
 
-    1. Attribution Requirement:\n
-    The above copyright notices, this permission notice, and a clear, prominent 
-    indication of original authorship by SLY-F0X, as well as explicit attribution 
-    to Snawoot (for the opera-proxy Go binary) and the Tun2Proxy project, shall be 
-    included in all copies, substantial portions, or derivative works of the Software.
+        1. Attribution Requirement:\n
+            The above copyright notices, this permission notice, and a clear, prominent 
+            indication of original authorship by SLY-F0X for wapper code, as well as explicit attribution 
+            to Snawoot (for the opera-proxy original Go binary) and the Tun2Proxy project, shall be 
+            included in all copies, substantial portions, or derivative works of the Software.\n
 
-    2. Non-Commercial Use Only:\n
-    The Software, as well as any modifications, derivative works, or integrations, 
-    shall not be used, directly or indirectly, for any commercial purpose, monetary 
-    gain, or to provide commercial services. 
+        2. Non-Commercial Use Only:\n
+            The Software, as well as any modifications, derivative works, or integrations, 
+            shall not be used, directly or indirectly, for any commercial purpose, monetary \n
+            gain, or to provide commercial services. 
 
-    3. Network Interaction and Copyleft (AGPL-style):\n
-    If you modify the Software, or if you run the Software (or any derivative work) 
-    on a server and let other users interact with it remotely through a computer network, 
-    you must clearly provide those users with an accessible opportunity to download 
-    the complete corresponding source code of the Software (including your modifications) 
-    free of charge. Any modified versions or derivative works must be distributed under 
-    the exact same terms of this modified license.
+        3. Network Interaction and Copyleft:\n
+            If you modify the Software, or if you run the Software (or any derivative work) 
+            on a server and let other users interact with it remotely through a computer network, 
+            you must clearly provide those users with an accessible opportunity to download 
+            the complete corresponding source code of the Software (including your modifications) 
+            free of charge. Any modified versions or derivative works must be distributed under 
+            the exact same terms of this modified license.\n
 
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

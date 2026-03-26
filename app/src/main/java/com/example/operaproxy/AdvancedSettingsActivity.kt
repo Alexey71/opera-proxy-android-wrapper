@@ -52,9 +52,9 @@ class AdvancedSettingsActivity : AppCompatActivity() {
     // Значения по умолчанию
     private val DEFAULT_BIND = "127.0.0.1:1085"
     private val DEFAULT_BOOTSTRAP =
-        "https://1.1.1.3/dns-query,https://8.8.8.8/dns-query,https://dns.google/dns-query,tls://9.9.9.9:853,https://security.cloudflare-dns.com/dns-query,https://fidelity.vm-0.com/q,https://wikimedia-dns.org/dns-query,https://dns.adguard-dns.com/dns-query,https://dns.quad9.net/dns-query,https://dns.comss.one/dns-query,https://router.comss.one/dns-query"
+        "https://1.1.1.3/dns-query,https://8.8.4.4/dns-query,tls://9.9.9.9:853,https://security.cloudflare-dns.com/dns-query,https://wikimedia-dns.org/dns-query,https://dns.adguard-dns.com/dns-query,https://dns.quad9.net/dns-query,https://dns.comss.one/dns-query,https://router.comss.one/dns-query"
     private val DEFAULT_TEST_URL =
-        "https://ajax.googleapis.com/ajax/libs/indefinite-observable/2.0.1/indefinite-observable.bundle.js"
+        "https://translate.yandex.ru/icons/favicon.ico"
     private val DEFAULT_VERBOSITY_INDEX = 2 // 20 Info
     private val DEFAULT_DNS_STRATEGY_INDEX = 1 // 1 = OverTcp (Default)
 
